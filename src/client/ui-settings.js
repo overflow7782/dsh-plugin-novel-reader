@@ -56,7 +56,12 @@ function GlassSyncRow() {
   );
 }
 
-export function SettingsView() {
+/** DSH 设置窗口里「小说阅读」一页（settings.section 插槽）。 */
+export function SettingsPage() {
+  return h('div', { className: 'nr-settings-page', 'data-novel-reader': 'settings' }, h(SettingsView));
+}
+
+function SettingsView() {
   const s = useSettings();
   return h(
     'div',

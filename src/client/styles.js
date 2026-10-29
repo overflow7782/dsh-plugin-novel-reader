@@ -77,6 +77,10 @@ body[data-ds-dark-theme] .nr-surface[data-nr-glass=wallpaper]{--nr-we-tint:calc(
 .nr-peek-head .nr-btn{height:22px;min-width:22px;padding:0 4px;border-radius:6px;font-size:11px}
 .nr-peek-head .nr-peek-title{flex:1;min-width:0;justify-content:flex-start;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .nr-peek-toc{flex:1;min-height:0;overflow-y:auto;padding:0 8px 8px;scrollbar-width:thin}
+.nr-settings-page{--nr-fg:var(--dsw-alias-label-primary,#1f2329);display:flex;flex-direction:column;gap:12px;color:var(--nr-fg);font-family:var(--dsw-font-family,inherit)}
+.nr-settings-page .nr-group{margin:0;padding:12px 10px 8px;border-radius:12px;border:.5px solid var(--dsw-alias-border-l2,rgba(127,127,127,.25));background:var(--dsw-alias-bg-layer-1,transparent)}
+.nr-settings-page .nr-row>label{width:120px}
+.nr-settings-page>.nr-row{padding:0}
 .nr-sync{display:flex;flex-direction:column;gap:6px;margin:0 6px 8px;padding:10px;border-radius:10px;font-size:12px;background:color-mix(in srgb,var(--dsw-alias-state-business-primary,#4d6bfe) 10%,transparent)}
 .nr-sync .nr-btn{align-self:flex-start}
 

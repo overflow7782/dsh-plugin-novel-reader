@@ -3,9 +3,8 @@
 import { clearError, currentPercent, gotoChapter, nextChapter, openBook, percentOf, prevChapter, removeBook } from './state.js';
 import { surfaceVars } from './settings.js';
 import { t } from './i18n.js';
-import { ChevronLeftIcon, ChevronRightIcon, CloseIcon, GearIcon, ShelfIcon, TocIcon, TrashIcon } from './icons.js';
+import { ChevronLeftIcon, ChevronRightIcon, CloseIcon, ShelfIcon, TocIcon, TrashIcon } from './icons.js';
 import { ChapterText, ImportZone, useChapterScroll, useInitReader, useReader, useSettings, useVisible } from './ui-shared.js';
-import { SettingsView } from './ui-settings.js';
 
 function IconButton({ icon, label, onClick, active, disabled }) {
   return h('button', { type: 'button', className: 'nr-btn', title: label, 'aria-label': label, 'aria-pressed': active ?? undefined, 'data-active': active || undefined, disabled, onClick }, h(icon, { size: 16 }));
@@ -164,7 +163,6 @@ export function ReaderSurface() {
       sheet !== null ? h(IconButton, { icon: CloseIcon, label: t('close'), onClick: () => setSheet(null) }) : null,
       h(IconButton, { icon: ShelfIcon, label: t('shelf'), active: sheet === 'shelf', onClick: () => toggle('shelf') }),
       h(IconButton, { icon: TocIcon, label: t('toc'), active: sheet === 'toc', disabled: book === null, onClick: () => toggle('toc') }),
-      h(IconButton, { icon: GearIcon, label: t('settings'), active: sheet === 'settings', onClick: () => toggle('settings') }),
     ),
     book !== null
       ? h(ReaderBody, { reader })
@@ -181,6 +179,5 @@ export function ReaderSurface() {
       ? h(Sheet, null, h(ShelfView, { onOpened: () => setSheet(null) }))
       : null,
     sheet === 'toc' && book !== null ? h(Sheet, null, h(TocView, { onPick: () => setSheet(null) })) : null,
-    sheet === 'settings' ? h(Sheet, null, h(SettingsView)) : null,
   );
 }

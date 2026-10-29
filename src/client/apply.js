@@ -7,6 +7,8 @@ import { BookIcon } from './icons.js';
 import { Boundary } from './ui-shared.js';
 import { ReaderSurface } from './ui-reader.js';
 import { DockPeek } from './ui-peek.js';
+import { SettingsPage } from './ui-settings.js';
+import { installNavIcon } from './nav-icon.js';
 
 export const inject = ['slots', 'locale'];
 
@@ -18,6 +20,7 @@ const BETTER_SIDEBAR_GRACE_MS = 1500;
 
 const SidebarTab = () => h(Boundary, { fallback: null }, h(ReaderSurface));
 const DockSlot = () => h(Boundary, { fallback: null }, h(DockPeek));
+const SettingsSlot = () => h(Boundary, { fallback: null }, h(SettingsPage));
 
 function serviceOf(ctx, name) {
   try {
@@ -118,6 +121,11 @@ export function apply(ctx) {
       flushProgress();
     };
   }, 'novel-reader: progress flush');
+
+  ctx.slots.inject('settings.section', () =>
+    ctx.slots.register({ name: 'settings.section', id: 'novel-reader', order: 400, locale: NS, label: () => t('settingsNav') }, SettingsSlot),
+  );
+  ctx.effect(() => installNavIcon(() => t('settingsNav')), 'novel-reader: settings nav icon');
 
   ctx.slots.inject('conversation.composer.dock', () =>
     ctx.slots.register({ name: 'conversation.composer.dock', id: 'novel-reader', order: 5, locale: NS, label: () => t('dockLabel') }, DockSlot),

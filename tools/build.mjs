@@ -23,6 +23,7 @@ const ORDER = [
   'client/ui-settings.js',
   'client/ui-reader.js',
   'client/ui-peek.js',
+  'client/nav-icon.js',
   'client/apply.js',
 ];
 
