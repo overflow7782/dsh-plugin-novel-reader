@@ -3,7 +3,12 @@
 const STYLE_ID = 'dsh-plugin-novel-reader';
 
 const CSS = `
-.nr-surface{box-sizing:border-box;color:var(--nr-fg);background:var(--nr-bg);-webkit-backdrop-filter:blur(var(--nr-blur)) saturate(1.4);backdrop-filter:blur(var(--nr-blur)) saturate(1.4);font-family:var(--nr-font)}
+/* 玻璃底色 = 壁纸引擎右侧栏（跟随全局）的配方：
+   可读性地板（钳制后的玻璃色 × 地板常量×保真度）叠 玻璃色×玻璃份额，加白釉渐变、内高光；
+   模糊 + 饱和度 1.3 + 亮度 1.04。深色主题换地板常量、釉层，并把玻璃份额乘 0.65。 */
+.nr-surface{box-sizing:border-box;color:var(--nr-fg);font-family:var(--nr-font);--nr-floor:calc(0.45 * var(--nr-fidelity,1));--nr-base:var(--nr-tint-light,#ffffff);--nr-share:calc(var(--nr-glass-alpha,0.22) * 100%);--nr-sheen-a:0.10;--nr-sheen-b:0.03;--nr-sheen-c:0.05;background-color:color-mix(in srgb,var(--nr-base) calc(var(--nr-floor) * 100%),color-mix(in srgb,var(--nr-base) var(--nr-share),transparent) calc((1 - var(--nr-floor)) * 100%));background-image:linear-gradient(180deg,rgba(255,255,255,var(--nr-sheen-a)),rgba(255,255,255,var(--nr-sheen-b)) 38%,rgba(255,255,255,var(--nr-sheen-c)));-webkit-backdrop-filter:blur(var(--nr-blur)) saturate(1.3) brightness(1.04) contrast(1.01);backdrop-filter:blur(var(--nr-blur)) saturate(1.3) brightness(1.04) contrast(1.01)}
+[data-ds-dark-theme] .nr-surface{--nr-floor:calc(0.59 * var(--nr-fidelity,1));--nr-base:var(--nr-tint-dark,#0d1524);--nr-share:calc(var(--nr-glass-alpha,0.22) * 65%);--nr-sheen-a:0.07;--nr-sheen-b:0.02;--nr-sheen-c:0.03}
+.nr-root{box-shadow:inset 0 1px 0 rgba(255,255,255,.32),inset 0 -1px 0 rgba(255,255,255,.08),inset 0 0 0 .5px rgba(255,255,255,.06)}
 .nr-surface *,.nr-surface *::before,.nr-surface *::after{box-sizing:border-box}
 .nr-muted{color:color-mix(in srgb,var(--nr-fg) 58%,transparent)}
 .nr-btn{display:inline-flex;align-items:center;justify-content:center;gap:4px;height:28px;min-width:28px;padding:0 8px;border:none;border-radius:8px;background:transparent;color:inherit;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
@@ -23,7 +28,7 @@ const CSS = `
 .nr-footer{flex:none;display:flex;align-items:center;justify-content:space-between;gap:8px;height:28px;padding:0 14px;font-size:12px;border-top:.5px solid color-mix(in srgb,var(--nr-fg) 10%,transparent)}
 .nr-footer span{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 
-.nr-sheet{position:absolute;inset:40px 0 0;display:flex;flex-direction:column;z-index:2;background:var(--nr-bg);-webkit-backdrop-filter:blur(calc(var(--nr-blur) + 8px)) saturate(1.4);backdrop-filter:blur(calc(var(--nr-blur) + 8px)) saturate(1.4);animation:nr-fade .14s ease-out}
+.nr-sheet{position:absolute;inset:40px 0 0;display:flex;flex-direction:column;z-index:2;-webkit-backdrop-filter:blur(calc(var(--nr-blur) + 8px)) saturate(1.4);backdrop-filter:blur(calc(var(--nr-blur) + 8px)) saturate(1.4);animation:nr-fade .14s ease-out}
 /* 书架/目录浮层：默认用固定的实色（不走 --dsw-alias-bg-*，壁纸引擎会把那组令牌改成半透明玻璃，文字就会和底下正文叠在一起）。 */
 .nr-sheet-solid{--nr-fg:var(--nr-sheet-fg,#1f2329);color:var(--nr-fg);background:var(--nr-sheet-bg,color-mix(in srgb,#ffffff var(--nr-sheet-op,96%),transparent))}
 [data-ds-dark-theme] .nr-sheet-solid{--nr-fg:var(--nr-sheet-fg,#e8e9ec);background:var(--nr-sheet-bg,color-mix(in srgb,#1c1d21 var(--nr-sheet-op,96%),transparent))}
@@ -67,7 +72,7 @@ const CSS = `
 .nr-dock-btn[data-pinned]{color:var(--dsw-alias-state-business-primary,#4d6bfe)}
 .nr-dock-btn:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary,#4d6bfe);outline-offset:-2px}
 
-.nr-peek{position:fixed;z-index:1000;display:flex;flex-direction:column;border-radius:12px;border:.5px solid color-mix(in srgb,var(--nr-fg) 18%,transparent);box-shadow:0 10px 32px rgba(0,0,0,.18),0 1px 3px rgba(0,0,0,.08);overflow:hidden;animation:nr-fade .12s ease-out}
+.nr-peek{position:fixed;z-index:1000;display:flex;flex-direction:column;border-radius:12px;border:.5px solid color-mix(in srgb,var(--nr-fg) 18%,transparent);box-shadow:0 10px 32px rgba(0,0,0,.18),0 1px 3px rgba(0,0,0,.08),inset 0 1px 0 rgba(255,255,255,.32),inset 0 0 0 .5px rgba(255,255,255,.06);overflow:hidden;animation:nr-fade .12s ease-out}
 .nr-peek-head{flex:none;display:flex;align-items:center;gap:2px;height:28px;padding:0 6px 0 8px;font-size:11px}
 .nr-peek-body{position:relative;flex:1;min-height:0;overflow-y:auto;padding:2px 14px 10px;scrollbar-width:none;-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 10px,#000 calc(100% - 14px),transparent 100%);mask-image:linear-gradient(to bottom,transparent 0,#000 10px,#000 calc(100% - 14px),transparent 100%)}
 .nr-peek-body::-webkit-scrollbar{display:none}
@@ -75,7 +80,7 @@ const CSS = `
 .nr-peek-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;height:100%;padding:12px;font-size:13px;text-align:center}
 .nr-surface[data-nr-glass=wallpaper]{--nr-we-floor:var(--we-readability-floor,0);--nr-we-tint:var(--we-sidebar-tint,30%);background-color:color-mix(in srgb,var(--we-readability-base,var(--dsw-alias-bg-layer-1,#fff)) calc(var(--nr-we-floor) * 100%),color-mix(in srgb,var(--we-sidebar-color,#fff) var(--nr-we-tint),transparent) calc((1 - var(--nr-we-floor)) * 100%));background-image:linear-gradient(180deg,rgba(255,255,255,var(--we-sidebar-sheen-a,0)),rgba(255,255,255,var(--we-sidebar-sheen-b,0)) 38%,rgba(255,255,255,var(--we-sidebar-sheen-c,0)));-webkit-backdrop-filter:blur(var(--we-sidebar-blur,20px)) saturate(var(--we-sidebar-saturate,1.4)) brightness(var(--we-glass-brightness,1.04)) contrast(1.01);backdrop-filter:blur(var(--we-sidebar-blur,20px)) saturate(var(--we-sidebar-saturate,1.4)) brightness(var(--we-glass-brightness,1.04)) contrast(1.01)}
 body[data-ds-dark-theme] .nr-surface[data-nr-glass=wallpaper]{--nr-we-tint:calc(var(--we-sidebar-tint,30%) * 0.65)}
-.nr-root.nr-surface[data-nr-glass=wallpaper]{background:transparent;-webkit-backdrop-filter:none;backdrop-filter:none}
+.nr-root.nr-surface[data-nr-glass=wallpaper]{box-shadow:none;background:transparent;-webkit-backdrop-filter:none;backdrop-filter:none}
 .nr-peek-head .nr-btn{height:22px;min-width:22px;padding:0 4px;border-radius:6px;font-size:11px}
 .nr-peek-head .nr-peek-title{flex:1;min-width:0;justify-content:flex-start;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .nr-peek-toc{flex:1;min-height:0;overflow-y:auto;padding:0 8px 8px;scrollbar-width:thin}
@@ -83,6 +88,17 @@ body[data-ds-dark-theme] .nr-surface[data-nr-glass=wallpaper]{--nr-we-tint:calc(
 .nr-settings-page .nr-group{margin:0;padding:12px 10px 8px;border-radius:12px;border:.5px solid var(--dsw-alias-border-l2,rgba(127,127,127,.25));background:var(--dsw-alias-bg-layer-1,transparent)}
 .nr-settings-page .nr-row>label{width:120px}
 .nr-settings-page>.nr-row{padding:0}
+.nr-settings-page input[type=checkbox]{appearance:none;-webkit-appearance:none;position:relative;width:36px;height:20px;margin:0 0 0 auto;border-radius:999px;background:color-mix(in srgb,currentColor 22%,transparent);cursor:pointer;transition:background .15s}
+.nr-settings-page input[type=checkbox]::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
+.nr-settings-page input[type=checkbox]:checked{background:var(--dsw-alias-state-business-primary,#4d6bfe)}
+.nr-settings-page input[type=checkbox]:checked::after{transform:translateX(16px)}
+.nr-swatches{align-items:center}
+.nr-swatch-round{width:24px;height:24px;border-radius:50%;border:.5px solid color-mix(in srgb,currentColor 30%,transparent)}
+.nr-swatch-custom{position:relative;display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 8px 0 2px;border-radius:999px;font-size:12px;cursor:pointer;opacity:.85}
+.nr-swatch-custom[data-active]{outline:2px solid var(--dsw-alias-state-business-primary,#4d6bfe);outline-offset:1px;opacity:1}
+.nr-swatch-custom input[type=color]{width:20px;height:20px;border-radius:50%;padding:0;border:.5px solid color-mix(in srgb,currentColor 30%,transparent);overflow:hidden}
+.nr-swatch-custom input[type=color]::-webkit-color-swatch-wrapper{padding:0}
+.nr-swatch-custom input[type=color]::-webkit-color-swatch{border:none;border-radius:50%}
 .nr-sync{display:flex;flex-direction:column;gap:6px;margin:0 6px 8px;padding:10px;border-radius:10px;font-size:12px;background:color-mix(in srgb,var(--dsw-alias-state-business-primary,#4d6bfe) 10%,transparent)}
 .nr-sync .nr-btn{align-self:flex-start}
 

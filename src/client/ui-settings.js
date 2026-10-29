@@ -1,6 +1,7 @@
-// 外观设置面板。
+// DSH 设置窗口里「小说阅读」一页。玻璃一组与壁纸引擎「玻璃 UI」同名、同刻度、同配方。
 /* global h */
-import { settingsStore, THEME_PRESETS, wallpaperGlassActive } from './settings.js';
+import { settingsStore, wallpaperGlassActive } from './settings.js';
+import { GLASS_COLOR_PRESETS } from '../core/glass.js';
 import { t } from './i18n.js';
 import { useSettings } from './ui-shared.js';
 
@@ -11,12 +12,11 @@ const FONT_OPTIONS = [
   ['hei', 'fontHei'],
   ['fangsong', 'fontFangsong'],
 ];
-const PRESET_LABELS = { auto: 'presetAuto', paper: 'presetPaper', green: 'presetGreen', parchment: 'presetParchment', night: 'presetNight', ink: 'presetInk' };
 
 const update = (key, value) => settingsStore.update({ [key]: value });
 
-function Row(label, control) {
-  return h('div', { className: 'nr-row' }, h('label', null, t(label)), h('div', { className: 'nr-ctl' }, control));
+function Row(label, control, labelText) {
+  return h('div', { className: 'nr-row' }, h('label', null, labelText ?? t(label)), h('div', { className: 'nr-ctl' }, control));
 }
 
 function RangeRow({ k, min, max, step = 1, unit = '' }) {
@@ -32,12 +32,36 @@ function CheckRow({ k }) {
   return Row(k, h('input', { type: 'checkbox', checked: value, 'aria-label': t(k), onChange: (e) => update(k, e.target.checked) }));
 }
 
+/** 可以「跟随主题」（空值）的颜色行。 */
 function ColorRow({ k, fallback }) {
   const value = useSettings()[k];
   return Row(k, [
     h('input', { key: 'c', type: 'color', value: value || fallback, 'aria-label': t(k), onChange: (e) => update(k, e.target.value) }),
     h('button', { key: 'b', type: 'button', className: 'nr-btn nr-btn-outline', 'data-active': value === '' || undefined, onClick: () => update(k, '') }, t('followTheme')),
   ]);
+}
+
+/** 玻璃颜色：壁纸引擎同款六个色板 + 自定义取色。 */
+function GlassColorRow({ k, label }) {
+  const value = useSettings()[k];
+  const custom = !GLASS_COLOR_PRESETS.includes(value);
+  return Row(
+    k,
+    h(
+      'div',
+      { className: 'nr-swatches' },
+      GLASS_COLOR_PRESETS.map((color) =>
+        h('button', { key: color, type: 'button', className: 'nr-swatch nr-swatch-round', title: color, 'aria-label': color, 'data-active': value === color || undefined, style: { background: color }, onClick: () => update(k, color) }),
+      ),
+      h(
+        'label',
+        { key: 'custom', className: 'nr-swatch-custom', 'data-active': custom || undefined, title: t('custom') },
+        h('input', { type: 'color', value, 'aria-label': t('custom'), onChange: (e) => update(k, e.target.value) }),
+        t('custom'),
+      ),
+    ),
+    label,
+  );
 }
 
 function Group(title, ...rows) {
@@ -54,6 +78,21 @@ function GlassSyncRow() {
     h('span', null, s.glassSync ? t('glassSyncOn') : t('glassSyncHint')),
     h('button', { type: 'button', className: 'nr-btn nr-btn-outline', onClick: () => update('glassSync', !s.glassSync) }, s.glassSync ? t('glassSyncOff') : t('glassSync')),
   );
+}
+
+/** 玻璃一组：顺序与壁纸引擎「玻璃 UI」一致，另加本插件自己的文字颜色。 */
+function GlassRows() {
+  const s = useSettings();
+  return [
+    h(GlassSyncRow, { key: 'sync' }),
+    h(CheckRow, { key: 'ds', k: 'glassDarkSeparate' }),
+    h(GlassColorRow, { key: 'gl', k: 'glassColorLight', label: s.glassDarkSeparate ? t('glassColorLight') : t('glassColor') }),
+    s.glassDarkSeparate ? h(GlassColorRow, { key: 'gd', k: 'glassColorDark', label: t('glassColorDark') }) : null,
+    h(RangeRow, { key: 'ga', k: 'glassAlpha', min: 0, max: 100, step: 5, unit: '%' }),
+    h(RangeRow, { key: 'bl', k: 'blur', min: 0, max: 60, unit: 'px' }),
+    h(RangeRow, { key: 'gf', k: 'glassFidelity', min: 0, max: 100, step: 5, unit: '%' }),
+    h(ColorRow, { key: 'fg', k: 'textColor', fallback: '#1f2329' }),
+  ];
 }
 
 /** DSH 设置窗口里「小说阅读」一页（settings.section 插槽）。 */
@@ -74,37 +113,7 @@ function SettingsView() {
       Row('fontFamily', h('select', { value: s.fontFamily, onChange: (e) => update('fontFamily', e.target.value) }, FONT_OPTIONS.map(([id, label]) => h('option', { key: id, value: id }, t(label))))),
       h(CheckRow, { key: 'in', k: 'indent' }),
     ),
-    Group(
-      'groupSurface',
-      h(GlassSyncRow, { key: 'sync' }),
-      Row(
-        'theme',
-        h(
-          'div',
-          { className: 'nr-swatches' },
-          THEME_PRESETS.map((preset) =>
-            h(
-              'button',
-              {
-                key: preset.id,
-                type: 'button',
-                className: 'nr-swatch',
-                title: t(PRESET_LABELS[preset.id]),
-                'aria-label': t(PRESET_LABELS[preset.id]),
-                'data-active': (s.bgColor === preset.bg && s.textColor === preset.fg) || undefined,
-                style: { background: preset.bg || 'var(--dsw-alias-bg-layer-1, #fff)', color: preset.fg || 'var(--dsw-alias-label-primary, #1f2329)' },
-                onClick: () => settingsStore.update({ bgColor: preset.bg, textColor: preset.fg }),
-              },
-              '文',
-            ),
-          ),
-        ),
-      ),
-      h(ColorRow, { key: 'bg', k: 'bgColor', fallback: '#ffffff' }),
-      h(ColorRow, { key: 'fg', k: 'textColor', fallback: '#1f2329' }),
-      h(RangeRow, { key: 'op', k: 'bgOpacity', min: 0, max: 100, unit: '%' }),
-      h(RangeRow, { key: 'bl', k: 'blur', min: 0, max: 40, unit: 'px' }),
-    ),
+    Group('groupGlass', ...GlassRows()),
     Group(
       'groupSheet',
       h(ColorRow, { key: 'sb', k: 'sheetBg', fallback: '#ffffff' }),

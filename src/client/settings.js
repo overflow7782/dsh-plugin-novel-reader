@@ -1,9 +1,10 @@
 // 阅读外观设置：localStorage 持久化，useSyncExternalStore 订阅。
+import { clampSurfaceColor, glassAlphaOf } from '../core/glass.js';
 
-const SETTINGS_KEY = 'dsh-plugin-novel-reader:settings:v2';
-const LEGACY_SETTINGS_KEY = 'dsh-plugin-novel-reader:settings:v1';
-/** 改动这些键视为「自己调背景」，会退出壁纸引擎同步。 */
-const OWN_GLASS_KEYS = ['bgColor', 'bgOpacity', 'blur'];
+const SETTINGS_KEY = 'dsh-plugin-novel-reader:settings:v3';
+const LEGACY_KEYS = ['dsh-plugin-novel-reader:settings:v2', 'dsh-plugin-novel-reader:settings:v1'];
+/** 改动这些键视为「自己调玻璃」，会退出壁纸引擎同步。 */
+const OWN_GLASS_KEYS = ['glassColorLight', 'glassColorDark', 'glassDarkSeparate', 'glassAlpha', 'blur', 'glassFidelity'];
 
 export const DEFAULT_SETTINGS = Object.freeze({
   fontSize: 15,
@@ -12,10 +13,14 @@ export const DEFAULT_SETTINGS = Object.freeze({
   fontFamily: 'system',
   indent: true,
   textColor: '',
-  bgColor: '',
-  bgOpacity: 62,
-  blur: 20,
-  /** 背景改用 dsh-plugin-wallpaper-engine 的毛玻璃（实时跟随它的设置）。 */
+  // 玻璃：与壁纸引擎「玻璃 UI」同名同刻度同默认值，填一样的数就得到一样的底色。
+  glassColorLight: '#ffffff',
+  glassColorDark: '#ffffff',
+  glassDarkSeparate: false,
+  glassAlpha: 20,
+  blur: 16,
+  glassFidelity: 100,
+  /** 背景直接用 dsh-plugin-wallpaper-engine 的毛玻璃（实时跟随它的设置）。 */
   glassSync: false,
   /** 书架、目录等浮层的底色；空 = 按深浅主题用实色。 */
   sheetBg: '',
@@ -36,28 +41,23 @@ export const FONT_STACKS = {
   fangsong: '"STFangsong", "FangSong", "仿宋", serif',
 };
 
-/** 背景/文字配色预设；空字符串 = 跟随 DSH 主题。 */
-export const THEME_PRESETS = [
-  { id: 'auto', bg: '', fg: '' },
-  { id: 'paper', bg: '#f6f1e7', fg: '#3b3630' },
-  { id: 'green', bg: '#d7ead3', fg: '#29382a' },
-  { id: 'parchment', bg: '#e8dcc2', fg: '#4a3b28' },
-  { id: 'night', bg: '#17181c', fg: '#b9bec7' },
-  { id: 'ink', bg: '#0d1b2a', fg: '#c9d6e3' },
-];
-
 const RANGES = {
   fontSize: [12, 30],
   lineHeight: [1.2, 2.8],
   paraSpacing: [0, 2],
-  bgOpacity: [0, 100],
-  blur: [0, 40],
+  glassAlpha: [0, 100],
+  blur: [0, 60],
+  glassFidelity: [0, 100],
   sheetOpacity: [40, 100],
   peekWidth: [260, 760],
   peekHeight: [90, 480],
   peekFontSize: [11, 24],
   scrollSpeed: [4, 90],
 };
+
+const COLOR_KEYS = ['textColor', 'sheetBg', 'glassColorLight', 'glassColorDark'];
+/** 允许为空串（= 跟随主题）的颜色键。 */
+const OPTIONAL_COLOR_KEYS = ['textColor', 'sheetBg'];
 
 function sanitize(raw) {
   const source = raw !== null && typeof raw === 'object' ? raw : {};
@@ -72,23 +72,31 @@ function sanitize(raw) {
       out[key] = value;
     } else if (key === 'fontFamily' && typeof value === 'string' && value in FONT_STACKS) {
       out[key] = value;
-    } else if ((key === 'textColor' || key === 'bgColor' || key === 'sheetBg') && typeof value === 'string' && /^(#[0-9a-f]{6})?$/i.test(value)) {
-      out[key] = value;
+    } else if (COLOR_KEYS.includes(key) && typeof value === 'string' && (/^#[0-9a-f]{6}$/i.test(value) || (value === '' && OPTIONAL_COLOR_KEYS.includes(key)))) {
+      out[key] = value.toLowerCase();
     }
   }
   return out;
+}
+
+/** v1/v2 的背景是「颜色 + 不透明度」，与壁纸引擎的玻璃模型不同：迁移时只带走能对上的项，玻璃回到壁纸引擎默认值。 */
+function migrate(legacy, fromV1) {
+  const { bgColor, bgOpacity, blur, ...rest } = legacy;
+  return { ...rest, ...(fromV1 ? { autoScroll: false } : {}) };
 }
 
 function load() {
   try {
     const current = localStorage.getItem(SETTINGS_KEY);
     if (current !== null) return sanitize(JSON.parse(current));
-    // v1 默认开着自动滚动；v2 起默认关闭，迁移时一并关掉。
-    const legacy = JSON.parse(localStorage.getItem(LEGACY_SETTINGS_KEY) ?? 'null');
-    return sanitize(legacy === null ? null : { ...legacy, autoScroll: false });
+    for (const [i, key] of LEGACY_KEYS.entries()) {
+      const legacy = JSON.parse(localStorage.getItem(key) ?? 'null');
+      if (legacy !== null && typeof legacy === 'object') return sanitize(migrate(legacy, i === 1));
+    }
   } catch {
-    return { ...DEFAULT_SETTINGS };
+    // fall through to defaults
   }
+  return { ...DEFAULT_SETTINGS };
 }
 
 /** 页面上是否有 dsh-plugin-wallpaper-engine 的玻璃在工作。 */
@@ -133,13 +141,21 @@ function readableInk(hex) {
   return luma > 0.55 ? '#1f2329' : '#eef0f3';
 }
 
-/** 把设置换算成阅读面板上的 CSS 变量。 */
+/** 「深色单独设置」关着时深色也用浅色那一个玻璃色（与壁纸引擎一致）。 */
+export function glassColorFor(s, theme) {
+  return theme === 'dark' && s.glassDarkSeparate ? s.glassColorDark : s.glassColorLight;
+}
+
+/** 把设置换算成阅读面板上的 CSS 变量；玻璃底色的组合在 styles.js 里按主题完成。 */
 export function surfaceVars(s, peek) {
-  const alpha = s.bgOpacity / 100;
+  const fidelity = s.glassFidelity / 100;
   const sheet = s.sheetBg ? { '--nr-sheet-bg': hexToRgba(s.sheetBg, s.sheetOpacity / 100), '--nr-sheet-fg': readableInk(s.sheetBg) } : { '--nr-sheet-op': `${s.sheetOpacity}%` };
   return {
     ...sheet,
-    '--nr-bg': s.bgColor ? hexToRgba(s.bgColor, alpha) : `color-mix(in srgb, var(--dsw-alias-bg-layer-1, #ffffff) ${s.bgOpacity}%, transparent)`,
+    '--nr-tint-light': clampSurfaceColor(glassColorFor(s, 'light'), 'light', fidelity),
+    '--nr-tint-dark': clampSurfaceColor(glassColorFor(s, 'dark'), 'dark', fidelity),
+    '--nr-glass-alpha': String(glassAlphaOf(s.glassAlpha)),
+    '--nr-fidelity': String(fidelity),
     '--nr-fg': s.textColor || 'var(--dsw-alias-label-primary, #1f2329)',
     '--nr-blur': `${s.blur}px`,
     '--nr-font': FONT_STACKS[s.fontFamily],

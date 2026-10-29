@@ -13,6 +13,7 @@ const ORDER = [
   'core/html.js',
   'core/epub.js',
   'core/book.js',
+  'core/glass.js',
   'client/db.js',
   'client/settings.js',
   'client/i18n.js',
