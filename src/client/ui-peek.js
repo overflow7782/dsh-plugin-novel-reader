@@ -219,13 +219,24 @@ export function DockPeek() {
   };
 
   React.useEffect(() => clearTimers, []);
+  // Esc 或点击速览窗、图标以外的任何地方都收起（包括已钉住的状态）。
   React.useEffect(() => {
     if (!open) return;
     const onKey = (event) => {
       if (event.key === 'Escape') hide();
     };
+    const onPointer = (event) => {
+      const target = event.target;
+      if (target instanceof Node && button.current?.contains(target)) return;
+      if (target instanceof Element && target.closest('[data-novel-reader="peek"]') !== null) return;
+      hide();
+    };
     window.addEventListener('keydown', onKey, true);
-    return () => window.removeEventListener('keydown', onKey, true);
+    document.addEventListener('pointerdown', onPointer, true);
+    return () => {
+      window.removeEventListener('keydown', onKey, true);
+      document.removeEventListener('pointerdown', onPointer, true);
+    };
   }, [open]);
 
   if (!settings.peekEnabled) return null;
