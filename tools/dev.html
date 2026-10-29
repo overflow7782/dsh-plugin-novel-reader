@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>novel-reader dev harness</title>
+<!-- 本地预览用的假宿主：模拟 DSH 的 slots / 右侧栏 / composer dock，以及一张花哨背景来检查毛玻璃。不随插件发布。 -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
+<style>
+  :root {
+    --dsw-font-family: system-ui, "PingFang SC", "Microsoft YaHei", sans-serif;
+    --dsw-alias-bg-layer-1: #ffffff;
+    --dsw-alias-label-primary: #1f2329;
+    --dsw-alias-label-secondary: #5c6068;
+    --dsw-alias-label-tertiary: #8a8f98;
+    --dsw-alias-state-business-primary: #4d6bfe;
+    --dsw-alias-interactive-bg-hover: rgba(0,0,0,.06);
+  }
+  html[data-theme=dark] {
+    --dsw-alias-bg-layer-1: #1d1e22;
+    --dsw-alias-label-primary: #f2f3f5;
+    --dsw-alias-label-secondary: #c4c7cc;
+    --dsw-alias-label-tertiary: #8d9198;
+    --dsw-alias-interactive-bg-hover: rgba(255,255,255,.08);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; height: 100vh; font-family: var(--dsw-font-family); color: var(--dsw-alias-label-primary);
+    background: radial-gradient(circle at 20% 30%, #ff5a5f 0, transparent 40%), radial-gradient(circle at 70% 60%, #ffd23f 0, transparent 35%), radial-gradient(circle at 40% 90%, #3bceac 0, transparent 40%), #b4161b; }
+  .app { display: flex; height: 100vh; }
+  .chat { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .messages { flex: 1; padding: 32px 48px; overflow: auto; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.4); }
+  .composer { margin: 0 32px 6px; padding: 14px; border-radius: 20px; background: color-mix(in srgb, var(--dsw-alias-bg-layer-1) 70%, transparent); backdrop-filter: blur(12px); min-height: 96px; color: var(--dsw-alias-label-tertiary); }
+  .dock { display: flex; justify-content: center; align-items: center; gap: 12px; padding: 4px 0 10px; font-size: 12px; color: var(--dsw-alias-label-tertiary); }
+  .dock .pill { padding: 2px 8px; border-radius: 999px; background: color-mix(in srgb, var(--dsw-alias-bg-layer-1) 70%, transparent); }
+  .side { width: 380px; flex: none; border-left: 1px solid rgba(255,255,255,.3); background: color-mix(in srgb, var(--dsw-alias-bg-layer-1) 25%, transparent); }
+  .tools { position: fixed; top: 8px; left: 8px; display: flex; gap: 6px; z-index: 5; }
+  .tools button { font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="tools">
+  <button id="theme">切换深浅色</button>
+  <button id="sample">导入示例 txt</button>
+</div>
+<div class="app">
+  <div class="chat">
+    <div class="messages"><h2>两处都改了。</h2><p>这里模拟对话区。把鼠标移到下方状态栏的书本图标上，会弹出速览窗。</p></div>
+    <div class="composer">发消息或创建任务，/ 调用指令，@ 文件或对话</div>
+    <div class="dock" id="dock"><span class="pill">8 轮 287 步 · 195 tok/s</span><span class="pill">22.9M tok · 缓存命中 96%</span><span id="dock-slot"></span><span class="pill">40%</span></div>
+  </div>
+  <div class="side" id="side"></div>
+</div>
+<script>
+  const slots = {};
+  const mounted = {};
+  function renderSlot(name, el) {
+    const Comp = slots[name];
+    if (Comp && !mounted[name]) { mounted[name] = true; ReactDOM.createRoot(el).render(React.createElement(Comp)); }
+  }
+  const ctx = {
+    effect(fn) { return fn(); },
+    locale: { register() { return () => {}; }, bind() { return (key) => key; } },
+    slots: {
+      inject(name, fn) { return fn(); },
+      register(opts, Comp) {
+        slots[opts.name] = Comp;
+        if (opts.name === 'conversation.composer.dock') renderSlot(opts.name, document.getElementById('dock-slot'));
+        if (opts.name === 'sidebar.right.pane.tab') renderSlot(opts.name, document.getElementById('side'));
+        return () => {};
+      },
+    },
+    get() { return undefined; },
+    inject(deps, cb) {
+      if (deps[0] !== 'sidebarRightTabs') return;
+      cb({ get: () => ({ register: (def) => { console.log('native tab type', def); return () => {}; } }), effect: (fn) => fn(), on() {} });
+    },
+  };
+  window.__ModuleLoader__ = {
+    load({ factory }) {
+      const mod = factory((id) => ({ react: window.React, 'react-dom': window.ReactDOM })[id]);
+      mod.apply(ctx);
+    },
+  };
+
+  document.getElementById('theme').onclick = () => {
+    const root = document.documentElement;
+    root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+  };
+  document.getElementById('sample').onclick = () => {
+    const words = '风从山口吹过来，带着一点潮湿的青草味。少年把背包往肩上提了提，沿着石阶慢慢往上走。山门早就破败了，只剩两根石柱还立着，柱上的字被雨水冲得模糊不清。';
+    let text = '《山门》作者：示例\n简介：这是一段用于预览排版的示例文字。\n\n';
+    for (let c = 1; c <= 6; c++) {
+      text += `第${'一二三四五六'[c - 1]}章 山门之${c}\n`;
+      for (let p = 0; p < 24; p++) text += `　　${p + 1}. ${words.repeat(1 + (p % 3))}\n`;
+    }
+    const drop = document.querySelector('.nr-drop');
+    if (!drop) { alert('先在侧边栏打开书架'); return; }
+    const dt = new DataTransfer();
+    dt.items.add(new File([text], '《山门》作者：示例.txt', { type: 'text/plain' }));
+    drop.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true }));
+  };
+</script>
+<script src="../lib/client.js"></script>
+</body>
+</html>

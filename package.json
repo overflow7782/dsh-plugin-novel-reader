@@ -1,0 +1,50 @@
+{
+  "name": "dsh-plugin-novel-reader",
+  "version": "0.1.0",
+  "description": "摸鱼小说阅读器 for DeepSeek Harness：状态栏悬停速览 + 侧边栏阅读，支持 txt / epub，毛玻璃背景可调。兼容 dsh-better-sidebar 与 dsh-plugin-wallpaper-engine。",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "README.md"
+  ],
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "dsh-better-sidebar",
+    "novel",
+    "reader",
+    "txt",
+    "epub"
+  ],
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "test": "node --test test/*.test.mjs",
+    "check": "node tools/build.mjs && node --check lib/client.js && node --test test/*.test.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-slots",
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-client-ui-sidebar-right"
+      ]
+    }
+  }
+}

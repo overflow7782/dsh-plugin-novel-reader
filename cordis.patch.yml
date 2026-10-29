@@ -1,0 +1,4 @@
+# 只插入本插件一行，不替换任何官方组件。
+- insert:
+    - id: novel-reader
+      name: dsh-plugin-novel-reader

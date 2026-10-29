@@ -1,0 +1,136 @@
+// 文案。注册到 DSH 的 locale 服务，跟随宿主语言；服务缺失时用中文。
+
+export const NS = 'novelReader';
+
+export const MESSAGES = {
+  zh: {
+    tabTitle: '小说',
+    tabDesc: '在侧边栏里看 txt / epub 小说',
+    dockLabel: '小说速览',
+    shelf: '书架',
+    toc: '目录',
+    settings: '设置',
+    importBook: '导入书籍',
+    importHint: '点击导入，或把 txt / epub 文件拖到这里',
+    importing: '正在导入…',
+    opening: '正在打开…',
+    emptyShelf: '书架是空的',
+    remove: '删除',
+    confirmRemove: '再点一次删除',
+    prevChapter: '上一章',
+    nextChapter: '下一章',
+    lastChapter: '已经是最后一章',
+    chapterOf: '第 {n}/{total} 章',
+    noBook: '还没有在读的书',
+    noBookPeek: '还没有在读的书，导入一本 txt / epub 开始吧',
+    paused: '已暂停 · 点击继续',
+    groupText: '文字',
+    groupSurface: '背景',
+    groupPeek: '状态栏速览',
+    fontSize: '字号',
+    lineHeight: '行距',
+    paraSpacing: '段距',
+    fontFamily: '字体',
+    indent: '首行缩进',
+    textColor: '文字颜色',
+    theme: '配色',
+    bgColor: '背景颜色',
+    bgOpacity: '背景不透明度',
+    blur: '毛玻璃模糊',
+    followTheme: '跟随主题',
+    custom: '自定义',
+    peekEnabled: '状态栏图标',
+    peekWidth: '速览宽度',
+    peekHeight: '速览高度',
+    peekFontSize: '速览字号',
+    autoScroll: '自动滚动',
+    scrollSpeed: '滚动速度',
+    reset: '恢复默认',
+    close: '关闭',
+    fontSystem: '跟随系统',
+    fontSong: '宋体',
+    fontKai: '楷体',
+    fontHei: '黑体',
+    fontFangsong: '仿宋',
+    presetAuto: '跟随主题',
+    presetPaper: '纸白',
+    presetGreen: '护眼绿',
+    presetParchment: '羊皮纸',
+    presetNight: '夜间',
+    presetInk: '墨蓝',
+  },
+  en: {
+    tabTitle: 'Novel',
+    tabDesc: 'Read txt / epub novels in the sidebar',
+    dockLabel: 'Novel peek',
+    shelf: 'Shelf',
+    toc: 'Contents',
+    settings: 'Settings',
+    importBook: 'Import book',
+    importHint: 'Click to import, or drop txt / epub files here',
+    importing: 'Importing…',
+    opening: 'Opening…',
+    emptyShelf: 'Your shelf is empty',
+    remove: 'Remove',
+    confirmRemove: 'Click again to remove',
+    prevChapter: 'Previous',
+    nextChapter: 'Next',
+    lastChapter: 'This is the last chapter',
+    chapterOf: 'Chapter {n}/{total}',
+    noBook: 'Nothing open yet',
+    noBookPeek: 'Nothing open yet — import a txt / epub to start',
+    paused: 'Paused · click to resume',
+    groupText: 'Text',
+    groupSurface: 'Background',
+    groupPeek: 'Status bar peek',
+    fontSize: 'Font size',
+    lineHeight: 'Line height',
+    paraSpacing: 'Paragraph spacing',
+    fontFamily: 'Font',
+    indent: 'Indent first line',
+    textColor: 'Text color',
+    theme: 'Color scheme',
+    bgColor: 'Background color',
+    bgOpacity: 'Background opacity',
+    blur: 'Glass blur',
+    followTheme: 'Follow theme',
+    custom: 'Custom',
+    peekEnabled: 'Status bar icon',
+    peekWidth: 'Peek width',
+    peekHeight: 'Peek height',
+    peekFontSize: 'Peek font size',
+    autoScroll: 'Auto scroll',
+    scrollSpeed: 'Scroll speed',
+    reset: 'Reset',
+    close: 'Close',
+    fontSystem: 'System',
+    fontSong: 'Song',
+    fontKai: 'Kai',
+    fontHei: 'Hei',
+    fontFangsong: 'FangSong',
+    presetAuto: 'Theme',
+    presetPaper: 'Paper',
+    presetGreen: 'Green',
+    presetParchment: 'Parchment',
+    presetNight: 'Night',
+    presetInk: 'Ink',
+  },
+};
+
+let bound = null;
+
+/** apply 时接上宿主 locale.bind(NS)；拿不到就用中文。 */
+export function bindLocale(fn) {
+  bound = fn;
+}
+
+export function t(key, values) {
+  let text;
+  try {
+    text = bound?.(key);
+  } catch {
+    text = undefined;
+  }
+  if (typeof text !== 'string' || text === '' || text === key || text.endsWith(`.${key}`)) text = MESSAGES.zh[key] ?? key;
+  return values ? text.replace(/\{(\w+)\}/g, (m, name) => (name in values ? String(values[name]) : m)) : text;
+}
