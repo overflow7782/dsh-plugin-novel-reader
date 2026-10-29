@@ -26,6 +26,10 @@ export const DEFAULT_SETTINGS = Object.freeze({
   sheetBg: '',
   sheetOpacity: 96,
   peekEnabled: true,
+  /** 右键速览窗即收起。 */
+  peekRightClickClose: true,
+  /** 隐藏小说的快捷键（收起速览窗 + 关掉侧栏「小说」分页）；空串 = 关闭。 */
+  bossKey: 'Shift+F1',
   peekWidth: 420,
   peekHeight: 168,
   peekFontSize: 14,
@@ -49,8 +53,8 @@ const RANGES = {
   blur: [0, 60],
   glassFidelity: [0, 100],
   sheetOpacity: [40, 100],
-  peekWidth: [260, 760],
-  peekHeight: [90, 480],
+  peekWidth: [240, 1200],
+  peekHeight: [80, 720],
   peekFontSize: [11, 24],
   scrollSpeed: [4, 90],
 };
@@ -71,6 +75,8 @@ function sanitize(raw) {
     } else if (typeof fallback === 'boolean' && typeof value === 'boolean') {
       out[key] = value;
     } else if (key === 'fontFamily' && typeof value === 'string' && value in FONT_STACKS) {
+      out[key] = value;
+    } else if (key === 'bossKey' && typeof value === 'string' && (value === '' || COMBO_RE.test(value))) {
       out[key] = value;
     } else if (COLOR_KEYS.includes(key) && typeof value === 'string' && (/^#[0-9a-f]{6}$/i.test(value) || (value === '' && OPTIONAL_COLOR_KEYS.includes(key)))) {
       out[key] = value.toLowerCase();
@@ -97,6 +103,28 @@ function load() {
     // fall through to defaults
   }
   return { ...DEFAULT_SETTINGS };
+}
+
+// ── 快捷键组合：形如 "Ctrl+Alt+Shift+Meta+KEY"，修饰键顺序固定，主键取 event.code（与键盘布局无关）。
+const MODIFIER_CODES = ['ShiftLeft', 'ShiftRight', 'ControlLeft', 'ControlRight', 'AltLeft', 'AltRight', 'MetaLeft', 'MetaRight'];
+const COMBO_RE = /^(Ctrl\+)?(Alt\+)?(Shift\+)?(Meta\+)?[A-Za-z0-9]+$/;
+
+/** 把按键事件换成组合串；只按了修饰键时返回空串。 */
+export function comboOf(event) {
+  if (MODIFIER_CODES.includes(event.code) || !event.code) return '';
+  const key = event.code.replace(/^Key/, '').replace(/^Digit/, '');
+  return `${event.ctrlKey ? 'Ctrl+' : ''}${event.altKey ? 'Alt+' : ''}${event.shiftKey ? 'Shift+' : ''}${event.metaKey ? 'Meta+' : ''}${key}`;
+}
+
+/** 录制时要求带修饰键或是功能键，避免把普通打字的按键设成老板键。 */
+export function isUsableCombo(combo) {
+  return combo !== '' && (combo.includes('+') || /^F([1-9]|1[0-9]|2[0-4])$/.test(combo));
+}
+
+let recordingCombo = false;
+export const isRecordingCombo = () => recordingCombo;
+export function setRecordingCombo(on) {
+  recordingCombo = on;
 }
 
 /** 页面上是否有 dsh-plugin-wallpaper-engine 的玻璃在工作。 */

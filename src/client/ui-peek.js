@@ -6,18 +6,61 @@ import { t } from './i18n.js';
 import { BookIcon, ChevronLeftIcon, ChevronRightIcon, PauseIcon, PlayIcon } from './icons.js';
 import { ChapterText, pickFiles, useChapterScroll, useInitReader, useReader, useSettings } from './ui-shared.js';
 
+/** 每个挂着的状态栏图标登记自己的收起函数（多窗口 / 多会话时可能不止一个）。 */
+const peekHiders = new Set();
+
+/** 收起所有速览窗。 */
+export function hideAllPeeks() {
+  for (const hide of peekHiders) hide();
+}
+
 const OPEN_DELAY_MS = 140;
 const CLOSE_DELAY_MS = 260;
 const WHEEL_PAUSE_MS = 1500;
 const CHAPTER_END_WAIT_MS = 1500;
 
 /** 速览窗贴着图标上方，水平居中并限制在窗口内。 */
-function place(anchor, settings) {
+function place(anchor, size) {
   const rect = anchor.getBoundingClientRect();
-  const width = Math.min(settings.peekWidth, window.innerWidth - 16);
+  const width = Math.min(size.width, window.innerWidth - 16);
   const left = Math.min(Math.max(8, rect.left + rect.width / 2 - width / 2), window.innerWidth - width - 8);
-  const height = Math.max(80, Math.min(settings.peekHeight, rect.top - 16));
+  const height = Math.max(80, Math.min(size.height, rect.top - 16));
   return { left, width, height, bottom: window.innerHeight - rect.top + 8 };
+}
+
+const sizeOf = (s) => ({ width: s.peekWidth, height: s.peekHeight });
+
+/** 速览窗的缩放把手：顶边改高度，左右上角同时改宽高。窗口水平居中，所以宽度按两倍位移变化。 */
+const RESIZE_GRIPS = [
+  { edge: 'top', w: 0, h: 1 },
+  { edge: 'top-left', w: -2, h: 1 },
+  { edge: 'top-right', w: 2, h: 1 },
+];
+
+function useResize(pos, hold) {
+  const [live, setLive] = React.useState(null);
+  const start = (grip) => (event) => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+    hold(true);
+    const from = { x: event.clientX, y: event.clientY, width: pos.width, height: pos.height };
+    let size = { width: from.width, height: from.height };
+    const move = (ev) => {
+      size = { width: Math.round(from.width + (ev.clientX - from.x) * grip.w), height: Math.round(from.height + (from.y - ev.clientY) * grip.h) };
+      setLive(size);
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      settingsStore.update({ peekWidth: size.width, peekHeight: size.height });
+      setLive(null);
+      hold(false);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+  return [live, start];
 }
 
 function useAutoScroll(ref, enabled, speed, lastWheel) {
@@ -89,20 +132,21 @@ function PeekToc({ reader, onPick }) {
   );
 }
 
-function PeekPopover({ anchor, onEnter, onLeave }) {
+function PeekPopover({ anchor, onEnter, onLeave, onHide, hold }) {
   const reader = useReader();
   const settings = useSettings();
   const scroll = React.useRef(null);
   const lastWheel = React.useRef(0);
   const [running, setRunning] = React.useState(settings.autoScroll);
   const [showToc, setShowToc] = React.useState(false);
-  const [pos, setPos] = React.useState(() => place(anchor, settings));
+  const [pos, setPos] = React.useState(() => place(anchor, sizeOf(settings)));
+  const [liveSize, startResize] = useResize(pos, hold);
   React.useLayoutEffect(() => {
-    const update = () => setPos(place(anchor, settingsStore.get()));
+    const update = () => setPos(place(anchor, liveSize ?? sizeOf(settingsStore.get())));
     update();
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);
-  }, [anchor, settings.peekWidth, settings.peekHeight]);
+  }, [anchor, settings.peekWidth, settings.peekHeight, liveSize]);
   const onScroll = useChapterScroll(scroll, reader, !showToc);
   useAutoScroll(scroll, running && !showToc && reader.book !== null, settings.scrollSpeed, lastWheel);
 
@@ -141,7 +185,14 @@ function PeekPopover({ anchor, onEnter, onLeave }) {
         hovered.current = false;
         onLeave();
       },
+      // 右键速览窗直接收起（设置里可关）；关掉时保留浏览器原生右键菜单。
+      onContextMenu: (event) => {
+        if (!settings.peekRightClickClose) return;
+        event.preventDefault();
+        onHide();
+      },
     },
+    RESIZE_GRIPS.map((grip) => h('div', { key: grip.edge, className: 'nr-peek-grip', 'data-edge': grip.edge, onPointerDown: startResize(grip) })),
     book === null
       ? h(
           'div',
@@ -208,9 +259,15 @@ export function DockPeek() {
     clearTimeout(timers.current.close);
     timers.current.open = setTimeout(() => setOpen(true), OPEN_DELAY_MS);
   };
+  // 拖动缩放期间鼠标会离开窗口，暂停「移开即收起」。
+  const holdRef = React.useRef(false);
+  const hold = (on) => {
+    holdRef.current = on;
+    if (on) clearTimeout(timers.current.close);
+  };
   const leave = () => {
     clearTimeout(timers.current.open);
-    if (!pinnedRef.current) timers.current.close = setTimeout(() => setOpen(false), CLOSE_DELAY_MS);
+    if (!pinnedRef.current && !holdRef.current) timers.current.close = setTimeout(() => setOpen(false), CLOSE_DELAY_MS);
   };
   const hide = () => {
     clearTimers();
@@ -219,6 +276,11 @@ export function DockPeek() {
   };
 
   React.useEffect(() => clearTimers, []);
+  // 老板键：收起速览窗。
+  React.useEffect(() => {
+    peekHiders.add(hide);
+    return () => peekHiders.delete(hide);
+  }, []);
   // Esc 或点击速览窗、图标以外的任何地方都收起（包括已钉住的状态）。
   React.useEffect(() => {
     if (!open) return;
@@ -256,6 +318,11 @@ export function DockPeek() {
         'data-novel-reader': 'dock',
         onMouseEnter: enter,
         onMouseLeave: leave,
+        onContextMenu: (event) => {
+          if (!open || !settings.peekRightClickClose) return;
+          event.preventDefault();
+          hide();
+        },
         onClick: () => {
           if (pinned) hide();
           else {
@@ -268,6 +335,6 @@ export function DockPeek() {
       },
       h(BookIcon, { size: 15 }),
     ),
-    open && button.current !== null ? createPortal(h(PeekPopover, { anchor: button.current, onEnter: enter, onLeave: leave }), document.body) : null,
+    open && button.current !== null ? createPortal(h(PeekPopover, { anchor: button.current, onEnter: enter, onLeave: leave, onHide: hide, hold }), document.body) : null,
   );
 }

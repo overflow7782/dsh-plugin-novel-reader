@@ -1,6 +1,6 @@
 // DSH 设置窗口里「小说阅读」一页。玻璃一组与壁纸引擎「玻璃 UI」同名、同刻度、同配方。
-/* global h */
-import { settingsStore, wallpaperGlassActive } from './settings.js';
+/* global React, h */
+import { comboOf, isUsableCombo, setRecordingCombo, settingsStore, wallpaperGlassActive } from './settings.js';
 import { GLASS_COLOR_PRESETS } from '../core/glass.js';
 import { t } from './i18n.js';
 import { useSettings } from './ui-shared.js';
@@ -24,6 +24,68 @@ function RangeRow({ k, min, max, step = 1, unit = '' }) {
   return Row(k, [
     h('input', { key: 'r', type: 'range', min, max, step, value, 'aria-label': t(k), onChange: (e) => update(k, Number(e.target.value)) }),
     h('span', { key: 'v', className: 'nr-val' }, `${step < 1 ? value.toFixed(1) : value}${unit}`),
+  ]);
+}
+
+/** 滑杆 + 数字框，适合需要精确到像素的尺寸。数字框在失焦或回车时提交。 */
+function SizeRow({ k, min, max, step = 10 }) {
+  const value = useSettings()[k];
+  const [draft, setDraft] = React.useState(String(value));
+  React.useEffect(() => setDraft(String(value)), [value]);
+  const commit = () => {
+    const n = Number(draft);
+    if (Number.isFinite(n)) update(k, Math.round(n));
+    else setDraft(String(value));
+  };
+  return Row(k, [
+    h('input', { key: 'r', type: 'range', min, max, step, value, 'aria-label': t(k), onChange: (e) => update(k, Number(e.target.value)) }),
+    h('input', {
+      key: 'n',
+      type: 'number',
+      className: 'nr-num',
+      min,
+      max,
+      value: draft,
+      'aria-label': t(k),
+      onChange: (e) => setDraft(e.target.value),
+      onBlur: commit,
+      onKeyDown: (e) => {
+        if (e.key === 'Enter') commit();
+      },
+    }),
+    h('span', { key: 'u', className: 'nr-unit' }, 'px'),
+  ]);
+}
+
+/** 点一下进入录制，按下新的组合键保存；Esc 取消，Backspace 关闭快捷键。 */
+function BossKeyRow() {
+  const value = useSettings().bossKey;
+  const [recording, setRecording] = React.useState(false);
+  React.useEffect(() => {
+    if (!recording) return;
+    setRecordingCombo(true);
+    const onKey = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (event.key === 'Escape') return setRecording(false);
+      if (event.key === 'Backspace' && !event.ctrlKey && !event.altKey && !event.shiftKey && !event.metaKey) {
+        update('bossKey', '');
+        return setRecording(false);
+      }
+      const combo = comboOf(event);
+      if (!isUsableCombo(combo)) return;
+      update('bossKey', combo);
+      setRecording(false);
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => {
+      window.removeEventListener('keydown', onKey, true);
+      setRecordingCombo(false);
+    };
+  }, [recording]);
+  return Row('bossKey', [
+    h('button', { key: 'rec', type: 'button', className: 'nr-btn nr-btn-outline nr-kbd', 'data-active': recording || undefined, onClick: () => setRecording((v) => !v) }, recording ? t('bossKeyRecording') : value || t('bossKeyOff')),
+    value !== 'Shift+F1' ? h('button', { key: 'def', type: 'button', className: 'nr-btn', onClick: () => update('bossKey', 'Shift+F1') }, t('reset')) : null,
   ]);
 }
 
@@ -122,12 +184,15 @@ function SettingsView() {
     Group(
       'groupPeek',
       h(CheckRow, { key: 'pe', k: 'peekEnabled' }),
-      h(RangeRow, { key: 'pw', k: 'peekWidth', min: 260, max: 760, step: 10, unit: 'px' }),
-      h(RangeRow, { key: 'ph', k: 'peekHeight', min: 90, max: 480, step: 10, unit: 'px' }),
+      h(SizeRow, { key: 'pw', k: 'peekWidth', min: 240, max: 1200 }),
+      h(SizeRow, { key: 'ph', k: 'peekHeight', min: 80, max: 720 }),
+      h('p', { key: 'rh', className: 'nr-hint' }, t('peekResizeHint')),
+      h(CheckRow, { key: 'rc', k: 'peekRightClickClose' }),
       h(RangeRow, { key: 'pf', k: 'peekFontSize', min: 11, max: 24, unit: 'px' }),
       h(CheckRow, { key: 'as', k: 'autoScroll' }),
       h(RangeRow, { key: 'sp', k: 'scrollSpeed', min: 4, max: 90, unit: 'px/s' }),
     ),
+    Group('groupShortcut', h(BossKeyRow, { key: 'bk' }), h('p', { key: 'hint', className: 'nr-hint' }, t('bossKeyHint'))),
     h('div', { className: 'nr-row' }, h('button', { type: 'button', className: 'nr-btn nr-btn-outline', onClick: () => settingsStore.reset() }, t('reset'))),
   );
 }

@@ -2,11 +2,12 @@
 /* global h */
 import { bindLocale, MESSAGES, NS, t } from './i18n.js';
 import { installStyles } from './styles.js';
+import { comboOf, isRecordingCombo, settingsStore } from './settings.js';
 import { flushProgress } from './state.js';
 import { BookIcon } from './icons.js';
 import { Boundary } from './ui-shared.js';
 import { ReaderSurface } from './ui-reader.js';
-import { DockPeek } from './ui-peek.js';
+import { DockPeek, hideAllPeeks } from './ui-peek.js';
 import { SettingsPage } from './ui-settings.js';
 import { installNavIcon } from './nav-icon.js';
 
@@ -57,6 +58,39 @@ function registerNativeTab(ctx, tabs) {
     disposeBody?.();
     disposeType();
   };
+}
+
+/** 老板键：收起速览窗，并关掉所有会话里打开的「小说」侧栏页签。 */
+function hideReader(ctx) {
+  hideAllPeeks();
+  const sidebar = serviceOf(ctx, 'sidebarRight');
+  try {
+    // better-sidebar 也把页签同步成原生右侧栏的同一个 kind，所以这一条路径两种情况都能关掉。
+    for (const tab of sidebar?.openTabs?.getSnapshot?.() ?? []) {
+      if (tab.kind === TAB_KIND) sidebar.closeIn(tab.sessionId, tab.tabId);
+    }
+  } catch (error) {
+    console.warn('[novel-reader] closing sidebar tabs failed', error);
+  }
+}
+
+/**
+ * 老板键用插件自己的按键监听，而不是 DSH 的快捷键服务：那边 Web 端只放行少数组合、
+ * Linux 上单 Shift 也算「缺修饰键」，Shift+F1 会被直接拒绝注册。键位在本插件设置页里录制。
+ */
+function registerBossKey(ctx) {
+  ctx.effect(() => {
+    const onKey = (event) => {
+      if (event.repeat || isRecordingCombo()) return;
+      const combo = settingsStore.get().bossKey;
+      if (combo === '' || comboOf(event) !== combo) return;
+      event.preventDefault();
+      event.stopPropagation();
+      hideReader(ctx);
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, 'novel-reader: boss key');
 }
 
 function registerSidebar(ctx) {
@@ -131,4 +165,5 @@ export function apply(ctx) {
     ctx.slots.register({ name: 'conversation.composer.dock', id: 'novel-reader', order: 5, locale: NS, label: () => t('dockLabel') }, DockSlot),
   );
   registerSidebar(ctx);
+  registerBossKey(ctx);
 }
