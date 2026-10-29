@@ -24,7 +24,9 @@ const CSS = `
 .nr-footer span{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 
 .nr-sheet{position:absolute;inset:40px 0 0;display:flex;flex-direction:column;z-index:2;background:var(--nr-bg);-webkit-backdrop-filter:blur(calc(var(--nr-blur) + 8px)) saturate(1.4);backdrop-filter:blur(calc(var(--nr-blur) + 8px)) saturate(1.4);animation:nr-fade .14s ease-out}
-.nr-sheet-solid{--nr-fg:var(--dsw-alias-label-primary,#1f2329);color:var(--nr-fg);background:color-mix(in srgb,var(--dsw-alias-bg-layer-1,#fff) 94%,transparent)}
+/* 书架/目录浮层：默认用固定的实色（不走 --dsw-alias-bg-*，壁纸引擎会把那组令牌改成半透明玻璃，文字就会和底下正文叠在一起）。 */
+.nr-sheet-solid{--nr-fg:var(--nr-sheet-fg,#1f2329);color:var(--nr-fg);background:var(--nr-sheet-bg,color-mix(in srgb,#ffffff var(--nr-sheet-op,96%),transparent))}
+[data-ds-dark-theme] .nr-sheet-solid{--nr-fg:var(--nr-sheet-fg,#e8e9ec);background:var(--nr-sheet-bg,color-mix(in srgb,#1c1d21 var(--nr-sheet-op,96%),transparent))}
 .nr-sheet-body{flex:1;min-height:0;overflow-y:auto;padding:8px 10px 20px;scrollbar-width:thin}
 @keyframes nr-fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 

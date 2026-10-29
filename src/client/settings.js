@@ -17,6 +17,9 @@ export const DEFAULT_SETTINGS = Object.freeze({
   blur: 20,
   /** 背景改用 dsh-plugin-wallpaper-engine 的毛玻璃（实时跟随它的设置）。 */
   glassSync: false,
+  /** 书架、目录等浮层的底色；空 = 按深浅主题用实色。 */
+  sheetBg: '',
+  sheetOpacity: 96,
   peekEnabled: true,
   peekWidth: 420,
   peekHeight: 168,
@@ -49,6 +52,7 @@ const RANGES = {
   paraSpacing: [0, 2],
   bgOpacity: [0, 100],
   blur: [0, 40],
+  sheetOpacity: [40, 100],
   peekWidth: [260, 760],
   peekHeight: [90, 480],
   peekFontSize: [11, 24],
@@ -68,7 +72,7 @@ function sanitize(raw) {
       out[key] = value;
     } else if (key === 'fontFamily' && typeof value === 'string' && value in FONT_STACKS) {
       out[key] = value;
-    } else if ((key === 'textColor' || key === 'bgColor') && typeof value === 'string' && /^(#[0-9a-f]{6})?$/i.test(value)) {
+    } else if ((key === 'textColor' || key === 'bgColor' || key === 'sheetBg') && typeof value === 'string' && /^(#[0-9a-f]{6})?$/i.test(value)) {
       out[key] = value;
     }
   }
@@ -122,10 +126,19 @@ function hexToRgba(hex, alpha) {
   return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
 }
 
+/** 自定义浮层底色时，按亮度挑深色或浅色文字。 */
+function readableInk(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  const luma = (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255;
+  return luma > 0.55 ? '#1f2329' : '#eef0f3';
+}
+
 /** 把设置换算成阅读面板上的 CSS 变量。 */
 export function surfaceVars(s, peek) {
   const alpha = s.bgOpacity / 100;
+  const sheet = s.sheetBg ? { '--nr-sheet-bg': hexToRgba(s.sheetBg, s.sheetOpacity / 100), '--nr-sheet-fg': readableInk(s.sheetBg) } : { '--nr-sheet-op': `${s.sheetOpacity}%` };
   return {
+    ...sheet,
     '--nr-bg': s.bgColor ? hexToRgba(s.bgColor, alpha) : `color-mix(in srgb, var(--dsw-alias-bg-layer-1, #ffffff) ${s.bgOpacity}%, transparent)`,
     '--nr-fg': s.textColor || 'var(--dsw-alias-label-primary, #1f2329)',
     '--nr-blur': `${s.blur}px`,

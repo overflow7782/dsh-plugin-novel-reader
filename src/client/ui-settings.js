@@ -106,6 +106,11 @@ function SettingsView() {
       h(RangeRow, { key: 'bl', k: 'blur', min: 0, max: 40, unit: 'px' }),
     ),
     Group(
+      'groupSheet',
+      h(ColorRow, { key: 'sb', k: 'sheetBg', fallback: '#ffffff' }),
+      h(RangeRow, { key: 'so', k: 'sheetOpacity', min: 40, max: 100, unit: '%' }),
+    ),
+    Group(
       'groupPeek',
       h(CheckRow, { key: 'pe', k: 'peekEnabled' }),
       h(RangeRow, { key: 'pw', k: 'peekWidth', min: 260, max: 760, step: 10, unit: 'px' }),

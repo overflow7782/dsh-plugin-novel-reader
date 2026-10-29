@@ -43,7 +43,9 @@
   <button id="theme">切换深浅色</button>
   <button id="sample">导入示例 txt</button>
   <button id="we">模拟壁纸引擎玻璃</button>
+  <button id="settings-toggle" onclick="document.getElementById('settings').hidden ^= true">设置窗口</button>
 </div>
+<div id="settings" hidden style="position:fixed;left:60px;top:40px;width:560px;max-height:80vh;overflow:auto;z-index:6;padding:16px;border-radius:16px;background:var(--dsw-alias-bg-layer-1);box-shadow:0 10px 40px rgba(0,0,0,.3)"></div>
 <div class="app">
   <div class="chat">
     <div class="messages"><h2>两处都改了。</h2><p>这里模拟对话区。把鼠标移到下方状态栏的书本图标上，会弹出速览窗。</p></div>
@@ -68,6 +70,7 @@
         slots[opts.name] = Comp;
         if (opts.name === 'conversation.composer.dock') renderSlot(opts.name, document.getElementById('dock-slot'));
         if (opts.name === 'sidebar.right.pane.tab') renderSlot(opts.name, document.getElementById('side'));
+        if (opts.name === 'settings.section') renderSlot(opts.name, document.getElementById('settings'));
         return () => {};
       },
     },
