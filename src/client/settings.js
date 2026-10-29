@@ -1,6 +1,9 @@
 // 阅读外观设置：localStorage 持久化，useSyncExternalStore 订阅。
 
-const SETTINGS_KEY = 'dsh-plugin-novel-reader:settings:v1';
+const SETTINGS_KEY = 'dsh-plugin-novel-reader:settings:v2';
+const LEGACY_SETTINGS_KEY = 'dsh-plugin-novel-reader:settings:v1';
+/** 改动这些键视为「自己调背景」，会退出壁纸引擎同步。 */
+const OWN_GLASS_KEYS = ['bgColor', 'bgOpacity', 'blur'];
 
 export const DEFAULT_SETTINGS = Object.freeze({
   fontSize: 15,
@@ -12,11 +15,13 @@ export const DEFAULT_SETTINGS = Object.freeze({
   bgColor: '',
   bgOpacity: 62,
   blur: 20,
+  /** 背景改用 dsh-plugin-wallpaper-engine 的毛玻璃（实时跟随它的设置）。 */
+  glassSync: false,
   peekEnabled: true,
   peekWidth: 420,
   peekHeight: 168,
   peekFontSize: 14,
-  autoScroll: true,
+  autoScroll: false,
   scrollSpeed: 18,
 });
 
@@ -72,10 +77,20 @@ function sanitize(raw) {
 
 function load() {
   try {
-    return sanitize(JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? 'null'));
+    const current = localStorage.getItem(SETTINGS_KEY);
+    if (current !== null) return sanitize(JSON.parse(current));
+    // v1 默认开着自动滚动；v2 起默认关闭，迁移时一并关掉。
+    const legacy = JSON.parse(localStorage.getItem(LEGACY_SETTINGS_KEY) ?? 'null');
+    return sanitize(legacy === null ? null : { ...legacy, autoScroll: false });
   } catch {
     return { ...DEFAULT_SETTINGS };
   }
+}
+
+/** 页面上是否有 dsh-plugin-wallpaper-engine 的玻璃在工作。 */
+export function wallpaperGlassActive() {
+  if (typeof document === 'undefined' || document.body === null) return false;
+  return document.body.hasAttribute('data-we-glass-page') || getComputedStyle(document.body).getPropertyValue('--we-sidebar-blur').trim() !== '';
 }
 
 let settings = load();
@@ -88,7 +103,8 @@ export const settingsStore = {
     return () => settingsListeners.delete(listener);
   },
   update(patch) {
-    settings = sanitize({ ...settings, ...patch });
+    const ownGlass = !('glassSync' in patch) && OWN_GLASS_KEYS.some((key) => key in patch);
+    settings = sanitize({ ...settings, ...patch, ...(ownGlass ? { glassSync: false } : {}) });
     try {
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
     } catch {

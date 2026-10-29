@@ -15,4 +15,6 @@ export const CloseIcon = ({ size = 16 }) => svg(size, [path('M6 6l12 12'), path(
 export const PlusIcon = ({ size = 16 }) => svg(size, [path('M12 5v14'), path('M5 12h14')]);
 export const TrashIcon = ({ size = 16 }) => svg(size, [path('M4 7h16'), path('M10 11v6'), path('M14 11v6'), path('M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12'), path('M9 7V4h6v3')]);
 export const ChevronLeftIcon = ({ size = 16 }) => svg(size, [path('M15 6l-6 6 6 6')]);
-export const ChevronRightIcon = ({ size = 16 }) => svg(size, [path('M9 6l6 6-6 6')]);
+export const PlayIcon = ({ size = 16 }) => svg(size, [path('M8 5.5v13l10-6.5z')]);
+export const PauseIcon = ({ size = 16 }) => svg(size, [path('M9 5.5v13'), path('M15 5.5v13')]);
+export const ChevronRightIcon =({ size = 16 }) => svg(size, [path('M9 6l6 6-6 6')]);

@@ -1,9 +1,9 @@
 // 阅读方式一：状态栏小图标，鼠标移入弹出毛玻璃速览窗，自动滚动阅读。
 /* global React, h, createPortal */
-import { currentPercent, nextChapter } from './state.js';
+import { currentPercent, gotoChapter, nextChapter, prevChapter } from './state.js';
 import { settingsStore, surfaceVars } from './settings.js';
 import { t } from './i18n.js';
-import { BookIcon } from './icons.js';
+import { BookIcon, ChevronLeftIcon, ChevronRightIcon, PauseIcon, PlayIcon } from './icons.js';
 import { ChapterText, pickFiles, useChapterScroll, useInitReader, useReader, useSettings } from './ui-shared.js';
 
 const OPEN_DELAY_MS = 140;
@@ -56,12 +56,46 @@ function useAutoScroll(ref, enabled, speed, lastWheel) {
   }, [enabled, speed]);
 }
 
+function isEditable(target) {
+  return target instanceof Element && target.closest('input, textarea, select, [contenteditable=""], [contenteditable="true"]') !== null;
+}
+
+/** 速览窗里的章节列表，打开时把当前章滚到中间。 */
+function PeekToc({ reader, onPick }) {
+  const list = React.useRef(null);
+  React.useLayoutEffect(() => {
+    list.current?.querySelector('[data-current]')?.scrollIntoView({ block: 'center' });
+  }, []);
+  return h(
+    'div',
+    { ref: list, className: 'nr-peek-toc' },
+    reader.book.chapters.map((chapter, i) =>
+      h(
+        'button',
+        {
+          key: i,
+          type: 'button',
+          className: 'nr-toc-item',
+          title: chapter.title,
+          'data-current': i === reader.progress.chapter || undefined,
+          onClick: () => {
+            gotoChapter(i);
+            onPick();
+          },
+        },
+        chapter.title,
+      ),
+    ),
+  );
+}
+
 function PeekPopover({ anchor, onEnter, onLeave }) {
   const reader = useReader();
   const settings = useSettings();
   const scroll = React.useRef(null);
   const lastWheel = React.useRef(0);
-  const [paused, setPaused] = React.useState(false);
+  const [running, setRunning] = React.useState(settings.autoScroll);
+  const [showToc, setShowToc] = React.useState(false);
   const [pos, setPos] = React.useState(() => place(anchor, settings));
   React.useLayoutEffect(() => {
     const update = () => setPos(place(anchor, settingsStore.get()));
@@ -69,11 +103,26 @@ function PeekPopover({ anchor, onEnter, onLeave }) {
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);
   }, [anchor, settings.peekWidth, settings.peekHeight]);
-  const onScroll = useChapterScroll(scroll, reader, true);
-  useAutoScroll(scroll, settings.autoScroll && !paused && reader.book !== null, settings.scrollSpeed, lastWheel);
+  const onScroll = useChapterScroll(scroll, reader, !showToc);
+  useAutoScroll(scroll, running && !showToc && reader.book !== null, settings.scrollSpeed, lastWheel);
+
+  // ←/→ 换章：鼠标停在速览窗上时总是生效；否则焦点在输入框里（正在打字）就不拦截。
+  const hovered = React.useRef(false);
+  React.useEffect(() => {
+    const onKey = (event) => {
+      if (event.altKey || event.ctrlKey || event.metaKey || (!hovered.current && isEditable(event.target))) return;
+      if (event.key === 'ArrowLeft' && prevChapter()) event.preventDefault();
+      else if (event.key === 'ArrowRight' && nextChapter()) event.preventDefault();
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, []);
 
   const book = reader.book;
-  const chapter = book?.chapters[reader.progress.chapter];
+  const index = reader.progress.chapter;
+  const chapter = book?.chapters[index];
+  const headButton = (key, label, icon, onClick, disabled) =>
+    h('button', { key, type: 'button', className: 'nr-btn', title: label, 'aria-label': label, disabled, onClick }, h(icon, { size: 13 }));
   return h(
     'div',
     {
@@ -82,9 +131,16 @@ function PeekPopover({ anchor, onEnter, onLeave }) {
       'aria-label': t('dockLabel'),
       'data-novel-reader': 'peek',
       'data-we-surface-preserve': '',
+      'data-nr-glass': settings.glassSync ? 'wallpaper' : undefined,
       style: { ...surfaceVars(settings, true), left: pos.left, bottom: pos.bottom, width: pos.width, height: pos.height },
-      onMouseEnter: onEnter,
-      onMouseLeave: onLeave,
+      onMouseEnter: () => {
+        hovered.current = true;
+        onEnter();
+      },
+      onMouseLeave: () => {
+        hovered.current = false;
+        onLeave();
+      },
     },
     book === null
       ? h(
@@ -94,24 +150,40 @@ function PeekPopover({ anchor, onEnter, onLeave }) {
           h('button', { type: 'button', className: 'nr-btn nr-btn-outline', onClick: pickFiles }, t('importBook')),
         )
       : [
-          h('div', { key: 'head', className: 'nr-peek-head nr-muted' }, h('span', null, `${book.meta.title} · ${chapter.title}`), h('span', null, `${currentPercent()}%`)),
           h(
             'div',
-            {
-              key: 'body',
-              ref: scroll,
-              className: 'nr-peek-body',
-              onScroll,
-              onWheel: () => {
-                lastWheel.current = performance.now();
-              },
-              onClick: () => {
-                if (settings.autoScroll) setPaused((p) => !p);
-              },
-            },
-            h(ChapterText, { chapter }),
+            { key: 'head', className: 'nr-peek-head nr-muted' },
+            headButton('prev', t('prevChapter'), ChevronLeftIcon, () => {
+              setShowToc(false);
+              prevChapter();
+            }, index === 0),
+            h(
+              'button',
+              { key: 'title', type: 'button', className: 'nr-btn nr-peek-title', title: t('toc'), 'aria-expanded': showToc, 'data-active': showToc || undefined, onClick: () => setShowToc((v) => !v) },
+              `${book.meta.title} · ${chapter.title}`,
+            ),
+            h('span', { key: 'pct', style: { flex: 'none', padding: '0 4px' } }, `${currentPercent()}%`),
+            headButton('play', running ? t('pause') : t('resume'), running ? PauseIcon : PlayIcon, () => setRunning((v) => !v), showToc),
+            headButton('next', t('nextChapter'), ChevronRightIcon, () => {
+              setShowToc(false);
+              nextChapter();
+            }, index >= book.chapters.length - 1),
           ),
-          paused && settings.autoScroll ? h('div', { key: 'paused', className: 'nr-peek-paused' }, t('paused')) : null,
+          showToc
+            ? h(PeekToc, { key: 'toc', reader, onPick: () => setShowToc(false) })
+            : h(
+                'div',
+                {
+                  key: 'body',
+                  ref: scroll,
+                  className: 'nr-peek-body',
+                  onScroll,
+                  onWheel: () => {
+                    lastWheel.current = performance.now();
+                  },
+                },
+                h(ChapterText, { chapter }),
+              ),
         ],
   );
 }

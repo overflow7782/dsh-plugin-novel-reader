@@ -155,7 +155,8 @@ export function ReaderSurface() {
   return h(
     'div',
     // data-we-surface-preserve：告诉 wallpaper-engine 这一面自带毛玻璃，不要接管底色。
-    { className: 'nr-surface nr-root', style: surfaceVars(settings, false), 'data-novel-reader': 'sidebar', 'data-we-surface-preserve': '' },
+    // 同步壁纸引擎时根节点透明，直接透出它给右侧栏画的那层玻璃，不再叠第二层。
+    { className: 'nr-surface nr-root', style: surfaceVars(settings, false), 'data-novel-reader': 'sidebar', 'data-we-surface-preserve': '', 'data-nr-glass': settings.glassSync ? 'wallpaper' : undefined },
     h(
       'div',
       { className: 'nr-toolbar' },

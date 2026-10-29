@@ -42,6 +42,7 @@
 <div class="tools">
   <button id="theme">切换深浅色</button>
   <button id="sample">导入示例 txt</button>
+  <button id="we">模拟壁纸引擎玻璃</button>
 </div>
 <div class="app">
   <div class="chat">
@@ -86,6 +87,17 @@
   document.getElementById('theme').onclick = () => {
     const root = document.documentElement;
     root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+  };
+  // 粗略模拟 dsh-plugin-wallpaper-engine：给 body 打标记、写入它的侧栏玻璃变量，并给右栏画一层同配方的玻璃。
+  document.getElementById('we').onclick = () => {
+    const b = document.body;
+    const on = !b.hasAttribute('data-we-glass-page');
+    const vars = { '--we-sidebar-blur': '28px', '--we-sidebar-saturate': '1.8', '--we-sidebar-tint': '26%', '--we-sidebar-color': '#ffe3ec', '--we-readability-floor': '0.08', '--we-readability-base': '#ffffff', '--we-glass-brightness': '1.04', '--we-sidebar-sheen-a': '0.14', '--we-sidebar-sheen-b': '0.03', '--we-sidebar-sheen-c': '0.01' };
+    for (const [k, v] of Object.entries(vars)) on ? b.style.setProperty(k, v) : b.style.removeProperty(k);
+    on ? b.setAttribute('data-we-glass-page', '') : b.removeAttribute('data-we-glass-page');
+    const side = document.getElementById('side');
+    side.style.background = on ? 'color-mix(in srgb, #fff 8%, color-mix(in srgb, #ffe3ec 26%, transparent) 92%)' : '';
+    side.style.backdropFilter = on ? 'blur(28px) saturate(1.8) brightness(1.04)' : '';
   };
   document.getElementById('sample').onclick = () => {
     const words = '风从山口吹过来，带着一点潮湿的青草味。少年把背包往肩上提了提，沿着石阶慢慢往上走。山门早就破败了，只剩两根石柱还立着，柱上的字被雨水冲得模糊不清。';

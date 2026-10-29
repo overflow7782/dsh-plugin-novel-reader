@@ -1,6 +1,6 @@
 // 外观设置面板。
 /* global h */
-import { settingsStore, THEME_PRESETS } from './settings.js';
+import { settingsStore, THEME_PRESETS, wallpaperGlassActive } from './settings.js';
 import { t } from './i18n.js';
 import { useSettings } from './ui-shared.js';
 
@@ -44,6 +44,18 @@ function Group(title, ...rows) {
   return h('section', { className: 'nr-group' }, h('h3', { className: 'nr-group-title' }, t(title)), ...rows);
 }
 
+/** 一键同步 dsh-plugin-wallpaper-engine 的毛玻璃；没检测到它且未开启同步时不显示。 */
+function GlassSyncRow() {
+  const s = useSettings();
+  if (!s.glassSync && !wallpaperGlassActive()) return null;
+  return h(
+    'div',
+    { className: 'nr-sync' },
+    h('span', null, s.glassSync ? t('glassSyncOn') : t('glassSyncHint')),
+    h('button', { type: 'button', className: 'nr-btn nr-btn-outline', onClick: () => update('glassSync', !s.glassSync) }, s.glassSync ? t('glassSyncOff') : t('glassSync')),
+  );
+}
+
 export function SettingsView() {
   const s = useSettings();
   return h(
@@ -59,6 +71,7 @@ export function SettingsView() {
     ),
     Group(
       'groupSurface',
+      h(GlassSyncRow, { key: 'sync' }),
       Row(
         'theme',
         h(
