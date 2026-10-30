@@ -98,10 +98,29 @@ body[data-ds-dark-theme] .nr-surface[data-nr-glass=wallpaper]{--nr-we-tint:calc(
 .nr-hint{margin:0 6px 6px;font-size:12px;line-height:1.5;opacity:.62}
 .nr-row .nr-hint{margin:0}
 .nr-peek-grip{position:absolute;z-index:3;touch-action:none}
-.nr-peek-grip[data-edge=top]{top:0;left:14px;right:14px;height:6px;cursor:ns-resize}
-.nr-peek-grip[data-edge=top-left]{top:0;left:0;width:14px;height:14px;cursor:nwse-resize}
-.nr-peek-grip[data-edge=top-right]{top:0;right:0;width:14px;height:14px;cursor:nesw-resize}
+.nr-peek-grip[data-edge=top]{top:0;left:16px;right:16px;height:6px;cursor:ns-resize}
+.nr-peek-grip[data-edge=bottom]{bottom:0;left:16px;right:16px;height:6px;cursor:ns-resize}
+.nr-peek-grip[data-edge=left]{left:0;top:16px;bottom:16px;width:6px;cursor:ew-resize}
+.nr-peek-grip[data-edge=right]{right:0;top:16px;bottom:16px;width:6px;cursor:ew-resize}
+.nr-peek-grip[data-edge=top-left]{top:0;left:0;width:16px;height:16px;cursor:nwse-resize}
+.nr-peek-grip[data-edge=top-right]{top:0;right:0;width:16px;height:16px;cursor:nesw-resize}
+.nr-peek-grip[data-edge=bottom-left]{bottom:0;left:0;width:16px;height:16px;cursor:nesw-resize}
+.nr-peek-grip[data-edge=bottom-right]{bottom:0;right:0;width:16px;height:16px;cursor:nwse-resize}
+/* 缩放时浮窗中央的实时像素读数。 */
+.nr-peek-size{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:4;padding:4px 10px;border-radius:999px;font-size:12px;line-height:1.4;font-variant-numeric:tabular-nums;pointer-events:none;background:rgba(18,20,24,.82);color:#fff;box-shadow:0 2px 10px rgba(0,0,0,.28)}
+.nr-dock-btn{cursor:grab;transition:transform .12s ease}
+.nr-dock-btn[data-dragging]{cursor:grabbing;transform:scale(1.18)}
 .nr-swatches{align-items:center}
+.nr-choices{display:flex;flex-wrap:wrap;gap:4px}
+.nr-choices .nr-btn{height:24px;min-width:0;padding:0 9px;font-size:12px}
+/* 「图标位置」的流程轴：一条滑杆 + 下面每一格的圆点，右边是「回归原位」。 */
+.nr-axis{display:flex;flex:1;min-width:0;flex-direction:column;gap:2px}
+.nr-axis input[type=range]{width:100%;margin:0}
+.nr-ticks{display:flex;justify-content:space-between;padding:0 8px}
+.nr-tick{width:6px;height:6px;padding:0;border:none;border-radius:50%;background:color-mix(in srgb,currentColor 24%,transparent);cursor:pointer;transition:transform .12s ease,background .12s ease}
+.nr-tick:hover{transform:scale(1.6)}
+.nr-tick[data-active]{background:var(--dsw-alias-state-business-primary,#4d6bfe)}
+.nr-row .nr-ctl>button.nr-btn{flex:none;height:26px;padding:0 10px;font-size:12px}
 .nr-swatch-round{width:24px;height:24px;border-radius:50%;border:.5px solid color-mix(in srgb,currentColor 30%,transparent)}
 .nr-swatch-custom{position:relative;display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 8px 0 2px;border-radius:999px;font-size:12px;cursor:pointer;opacity:.85}
 .nr-swatch-custom[data-active]{outline:2px solid var(--dsw-alias-state-business-primary,#4d6bfe);outline-offset:1px;opacity:1}

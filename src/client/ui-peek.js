@@ -5,6 +5,8 @@ import { settingsStore, surfaceVars } from './settings.js';
 import { t } from './i18n.js';
 import { BookIcon, ChevronLeftIcon, ChevronRightIcon, PauseIcon, PlayIcon } from './icons.js';
 import { ChapterText, pickFiles, useChapterScroll, useInitReader, useReader, useSettings } from './ui-shared.js';
+import { DOCK_RANK_AUTO, RESIZE_GRIPS, applyGrip, dockRankFor, placePeek } from '../core/peek-geom.js';
+import { clearCellOrder, dockOf, itemOf, itemsOf, placeCell } from './dock-order.js';
 
 /** 每个挂着的状态栏图标登记自己的收起函数（多窗口 / 多会话时可能不止一个）。 */
 const peekHiders = new Set();
@@ -19,46 +21,38 @@ const CLOSE_DELAY_MS = 260;
 const WHEEL_PAUSE_MS = 1500;
 const CHAPTER_END_WAIT_MS = 1500;
 
-/** 速览窗贴着图标上方，水平居中并限制在窗口内。 */
+/** 速览窗贴着图标上方（间隔可调），水平居中并限制在窗口内。几何计算在 core/peek-geom.js。 */
 function place(anchor, size) {
-  const rect = anchor.getBoundingClientRect();
-  const width = Math.min(size.width, window.innerWidth - 16);
-  const left = Math.min(Math.max(8, rect.left + rect.width / 2 - width / 2), window.innerWidth - width - 8);
-  const height = Math.max(80, Math.min(size.height, rect.top - 16));
-  return { left, width, height, bottom: window.innerHeight - rect.top + 8 };
+  return placePeek(anchor.getBoundingClientRect(), size, { width: window.innerWidth, height: window.innerHeight });
 }
 
-const sizeOf = (s) => ({ width: s.peekWidth, height: s.peekHeight });
+const sizeOf = (s) => ({ width: s.peekWidth, height: s.peekHeight, bottom: s.peekBottom });
 
-/** 速览窗的缩放把手：顶边改高度，左右上角同时改宽高。窗口水平居中，所以宽度按两倍位移变化。 */
-const RESIZE_GRIPS = [
-  { edge: 'top', w: 0, h: 1 },
-  { edge: 'top-left', w: -2, h: 1 },
-  { edge: 'top-right', w: 2, h: 1 },
-];
-
-function useResize(pos, hold) {
+function useResize(hold) {
   const [live, setLive] = React.useState(null);
   const start = (grip) => (event) => {
     if (event.button !== 0) return;
     event.preventDefault();
     event.stopPropagation();
+    const base = settingsStore.get();
     hold(true);
-    const from = { x: event.clientX, y: event.clientY, width: pos.width, height: pos.height };
-    let size = { width: from.width, height: from.height };
+    const from = { x: event.clientX, y: event.clientY, width: base.peekWidth, height: base.peekHeight, bottom: base.peekBottom };
+    let size = null;
     const move = (ev) => {
-      size = { width: Math.round(from.width + (ev.clientX - from.x) * grip.w), height: Math.round(from.height + (from.y - ev.clientY) * grip.h) };
+      size = applyGrip(grip, from, ev.clientX - from.x, ev.clientY - from.y);
       setLive(size);
     };
     const up = () => {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', up);
-      settingsStore.update({ peekWidth: size.width, peekHeight: size.height });
+      window.removeEventListener('pointercancel', up);
+      if (size !== null) settingsStore.update({ peekWidth: size.width, peekHeight: size.height, peekBottom: size.bottom });
       setLive(null);
       hold(false);
     };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
   };
   return [live, start];
 }
@@ -139,14 +133,14 @@ function PeekPopover({ anchor, onEnter, onLeave, onHide, hold }) {
   const lastWheel = React.useRef(0);
   const [running, setRunning] = React.useState(settings.autoScroll);
   const [showToc, setShowToc] = React.useState(false);
-  const [pos, setPos] = React.useState(() => place(anchor, sizeOf(settings)));
-  const [liveSize, startResize] = useResize(pos, hold);
-  React.useLayoutEffect(() => {
-    const update = () => setPos(place(anchor, liveSize ?? sizeOf(settingsStore.get())));
-    update();
+  const [liveSize, startResize] = useResize(hold);
+  const [, setWinTick] = React.useState(0);
+  React.useEffect(() => {
+    const update = () => setWinTick((v) => v + 1);
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);
-  }, [anchor, settings.peekWidth, settings.peekHeight, liveSize]);
+  }, []);
+  const pos = place(anchor, liveSize ?? sizeOf(settings));
   const onScroll = useChapterScroll(scroll, reader, !showToc);
   useAutoScroll(scroll, running && !showToc && reader.book !== null, settings.scrollSpeed, lastWheel);
 
@@ -193,6 +187,7 @@ function PeekPopover({ anchor, onEnter, onLeave, onHide, hold }) {
       },
     },
     RESIZE_GRIPS.map((grip) => h('div', { key: grip.edge, className: 'nr-peek-grip', 'data-edge': grip.edge, onPointerDown: startResize(grip) })),
+    liveSize === null ? null : h('div', { key: 'size', className: 'nr-peek-size' }, `${pos.width} × ${pos.height} px`),
     book === null
       ? h(
           'div',
@@ -250,6 +245,9 @@ export function DockPeek() {
   const timers = React.useRef({ open: 0, close: 0 });
   const pinnedRef = React.useRef(false);
   pinnedRef.current = pinned;
+  // 拖动图标换位置：插到指针所在的那一格，旁边的格子跟着让位；刚拖完的那一次点击不再当成「钉住/收起」。
+  const suppressClick = React.useRef(false);
+  const [dragging, setDragging] = React.useState(false);
 
   const clearTimers = () => {
     clearTimeout(timers.current.open);
@@ -274,8 +272,69 @@ export function DockPeek() {
     setPinned(false);
     setOpen(false);
   };
+  // 按住图标左右拖动：越过谁的中线就插到谁那一边，松手写入设置（peekDockRank）。
+  const beginDrag = (event) => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    const el = button.current;
+    const dock = dockOf(el);
+    if (dock === null) return;
+    const startX = event.clientX;
+    let moved = false;
+    let rank = -1;
+    hold(true);
+    const move = (ev) => {
+      if (!moved && Math.abs(ev.clientX - startX) < 3) return;
+      const items = itemsOf(dock);
+      const cell = itemOf(el, items);
+      if (cell === null) return;
+      const others = items.filter((node) => node !== cell).map((node) => node.getBoundingClientRect());
+      const next = dockRankFor(ev.clientX, others);
+      if (next === rank) return;
+      if (!moved) {
+        moved = true;
+        hide();
+        setDragging(true);
+      }
+      rank = next;
+      placeCell(items, cell, next, true);
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
+      if (moved && rank >= 0) settingsStore.update({ peekDockRank: rank });
+      suppressClick.current = moved;
+      setDragging(false);
+      hold(false);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
+  };
 
   React.useEffect(() => clearTimers, []);
+  // 图标站在设置里定的那一格；别人后来往 dock 里插了新控件就重新对位一次。
+  React.useEffect(() => {
+    if (!settings.peekEnabled) return;
+    const dock = dockOf(button.current);
+    if (dock === null) return;
+    const auto = settings.peekDockRank === DOCK_RANK_AUTO;
+    const sync = () => {
+      const items = itemsOf(dock);
+      if (auto) clearCellOrder(items);
+      else placeCell(items, itemOf(button.current, items), settings.peekDockRank, false);
+    };
+    sync();
+    if (auto) return;
+    // 有人往 dock 里插了/撤了控件：立刻对一次位，下一帧再校一次（那时尺寸已经量准）。
+    const observer = new MutationObserver(() => {
+      sync();
+      window.requestAnimationFrame(sync);
+    });
+    observer.observe(dock, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [settings.peekDockRank, settings.peekEnabled]);
   // 老板键：收起速览窗。
   React.useEffect(() => {
     peekHiders.add(hide);
@@ -315,15 +374,21 @@ export function DockPeek() {
         'aria-expanded': open,
         'data-open': open || undefined,
         'data-pinned': pinned || undefined,
+        'data-dragging': dragging || undefined,
         'data-novel-reader': 'dock',
         onMouseEnter: enter,
         onMouseLeave: leave,
+        onPointerDown: beginDrag,
         onContextMenu: (event) => {
           if (!open || !settings.peekRightClickClose) return;
           event.preventDefault();
           hide();
         },
         onClick: () => {
+          if (suppressClick.current) {
+            suppressClick.current = false;
+            return;
+          }
           if (pinned) hide();
           else {
             clearTimers();
@@ -331,7 +396,7 @@ export function DockPeek() {
             setOpen(true);
           }
         },
-        style: hasBook ? undefined : { opacity: 0.7 },
+        style: { opacity: hasBook ? undefined : 0.7 },
       },
       h(BookIcon, { size: 15 }),
     ),

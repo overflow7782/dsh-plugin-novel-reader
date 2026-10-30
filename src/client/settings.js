@@ -1,5 +1,6 @@
 // 阅读外观设置：localStorage 持久化，useSyncExternalStore 订阅。
 import { clampSurfaceColor, glassAlphaOf } from '../core/glass.js';
+import { DOCK_RANK_AUTO, DOCK_RANK_MAX } from '../core/peek-geom.js';
 
 const SETTINGS_KEY = 'dsh-plugin-novel-reader:settings:v3';
 const LEGACY_KEYS = ['dsh-plugin-novel-reader:settings:v2', 'dsh-plugin-novel-reader:settings:v1'];
@@ -32,6 +33,10 @@ export const DEFAULT_SETTINGS = Object.freeze({
   bossKey: 'Shift+F1',
   peekWidth: 420,
   peekHeight: 168,
+  /** 速览窗底边离状态栏图标上方的距离（px）；拖速览窗的底边会改它。 */
+  peekBottom: 8,
+  /** 图标在状态栏里站第几格（0 = 最左）；-1 = 不插手，保持注册顺序。拖图标会改它。 */
+  peekDockRank: DOCK_RANK_AUTO,
   peekFontSize: 14,
   autoScroll: false,
   scrollSpeed: 18,
@@ -55,6 +60,8 @@ const RANGES = {
   sheetOpacity: [40, 100],
   peekWidth: [240, 1200],
   peekHeight: [80, 720],
+  peekBottom: [0, 800],
+  peekDockRank: [DOCK_RANK_AUTO, DOCK_RANK_MAX],
   peekFontSize: [11, 24],
   scrollSpeed: [4, 90],
 };

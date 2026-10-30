@@ -2,6 +2,8 @@
 /* global React, h */
 import { comboOf, isUsableCombo, setRecordingCombo, settingsStore, wallpaperGlassActive } from './settings.js';
 import { GLASS_COLOR_PRESETS } from '../core/glass.js';
+import { DOCK_RANK_AUTO } from '../core/peek-geom.js';
+import { dockItemCount } from './dock-order.js';
 import { t } from './i18n.js';
 import { useSettings } from './ui-shared.js';
 
@@ -54,6 +56,52 @@ function SizeRow({ k, min, max, step = 10 }) {
       },
     }),
     h('span', { key: 'u', className: 'nr-unit' }, 'px'),
+  ]);
+}
+
+/**
+ * 图标位置：一条流程轴。游标停在哪一格，图标就插在状态栏的第几格；
+ * 轴下面每个点都是那一格，可以直接点。「回归原位」= 不再插手排序，跟在最后。
+ */
+function DockAxisRow() {
+  const rank = useSettings().peekDockRank;
+  // 还没探到状态栏（对话区没挂载过）就先按常见的四项给，别给出空轴。
+  const count = Math.max(dockItemCount() || 4, 1);
+  const last = count - 1;
+  const auto = rank === DOCK_RANK_AUTO;
+  const shown = auto ? last : Math.min(Math.max(rank, 0), last);
+  const set = (next) => update('peekDockRank', next);
+  return Row('peekDockRank', [
+    h(
+      'div',
+      { key: 'axis', className: 'nr-axis' },
+      h('input', {
+        type: 'range',
+        min: 0,
+        max: last,
+        step: 1,
+        value: shown,
+        'aria-label': t('peekDockRank'),
+        onChange: (e) => set(Number(e.currentTarget.value)),
+      }),
+      h(
+        'div',
+        { className: 'nr-ticks' },
+        Array.from({ length: count }, (_, i) =>
+          h('button', {
+            key: i,
+            type: 'button',
+            tabIndex: -1,
+            className: 'nr-tick',
+            title: t('dockRankN', { n: i + 1 }),
+            'data-active': (!auto && shown === i) || undefined,
+            onClick: () => set(i),
+          }),
+        ),
+      ),
+    ),
+    h('span', { key: 'v', className: 'nr-val' }, auto ? t('dockRankAuto') : t('dockRankN', { n: shown + 1 })),
+    h('button', { key: 'reset', type: 'button', className: 'nr-btn nr-btn-outline', disabled: auto || undefined, onClick: () => set(DOCK_RANK_AUTO) }, t('dockRankReset')),
   ]);
 }
 
@@ -184,8 +232,11 @@ function SettingsView() {
     Group(
       'groupPeek',
       h(CheckRow, { key: 'pe', k: 'peekEnabled' }),
+      h(DockAxisRow, { key: 'dr' }),
+      h('p', { key: 'dh', className: 'nr-hint' }, t('peekDockHint')),
       h(SizeRow, { key: 'pw', k: 'peekWidth', min: 240, max: 1200 }),
       h(SizeRow, { key: 'ph', k: 'peekHeight', min: 80, max: 720 }),
+      h(SizeRow, { key: 'pb', k: 'peekBottom', min: 0, max: 800, step: 1 }),
       h('p', { key: 'rh', className: 'nr-hint' }, t('peekResizeHint')),
       h(CheckRow, { key: 'rc', k: 'peekRightClickClose' }),
       h(RangeRow, { key: 'pf', k: 'peekFontSize', min: 11, max: 24, unit: 'px' }),
