@@ -1,40 +1,46 @@
-# dsh-plugin-novel-reader · 摸鱼小说阅读器
+<div align="center">
 
-DeepSeek Harness（DSH）插件：在 DSH 里看 txt / epub 小说。
+[**简体中文**](https://github.com/overflow7782/dsh-plugin-novel-reader/blob/master/README.md) · [English](https://github.com/overflow7782/dsh-plugin-novel-reader/blob/master/README.en.md)
 
-- **状态栏速览**：输入框下方状态栏（`8 轮 287 步 … 40%` 那一行）多一个书本小图标。鼠标移入弹出毛玻璃速览窗，移开就收起；点一下图标可以钉住；点速览窗以外的任何地方、再点一次图标或按 `Esc` 都会收起。
-  - 位置：按住这个书本图标左右拖动，它会插到状态栏里的另一格，旁边的控件跟着平滑让位，落点记成「图标位置」。设置里用一条轴显示状态栏的所有格子，拖游标或点轴下面的圆点都能直接指定，右边的「回归原位」让它回到默认（不插手排序）。速览窗永远跟着图标走。
-  - 大小：四边和四角都能拖，拖动时浮窗中央会显示实时像素读数；设置里也有宽高滑杆和数字框（宽 240–1200px、高 80–720px）。
-  - 间距：速览窗底边离图标上方的距离可以拖浮窗的底边改，也可以在设置里直接填（「速览底部间距」，0–800px）。
-  - 右键速览窗（或图标）立即收起，设置里可以关掉这个行为。
-  - 顶栏：`‹` 上一章 · 点章节名展开目录 · 进度 · `▷` 开始/暂停自动滚动 · `›` 下一章。鼠标停在速览窗上时 `←` / `→` 也能换章。
-  - 默认不自动滚动（设置里可改成「打开即滚动」）。自动滚动时用滚轮手动翻会暂停 1.5 秒，滚到章末自动进入下一章。
-- **侧边栏阅读**：右侧栏「开始」页里多一个「小说」入口，打开是完整阅读器，带书架和目录。左右方向键可以切换章节。
-- **设置**：在 DSH 设置窗口左侧的「小说阅读」里（账号菜单 → 设置，或 Ctrl+Alt+,）。
-- **老板键**：默认 `Shift+F1`，一下收起速览窗并关掉侧边栏的「小说」分页。在 设置 → 小说阅读 → 快捷键 里点按钮重新录制（需带修饰键或用 F1–F24），Backspace 可关闭。用的是插件自己的按键监听：DSH 的快捷键服务在 Web 端只放行少数组合，Shift+F1 会被拒绝注册。
-- 两种方式共用同一本书和同一份进度。
-- **导入**：txt（自动识别 UTF-8 / GBK / GB18030 / UTF-16，按「第 x 章 / 回 / 卷」、序章、楔子、番外等分章，识别不到章节时按约 4000 字分节）和 epub（目录优先取 nav，其次 NCX）。可以点击选择文件，也可以把文件拖进书架。
-- **外观**：字号、行距、段距、字体、首行缩进；文字颜色；书架和目录浮层单独的背景颜色与不透明度（默认按深浅主题用实色，不透出正文）。
-- **玻璃**：和 dsh-plugin-wallpaper-engine「玻璃 UI」同名、同刻度、同默认值、同一套计算——深色单独设置、玻璃颜色（同样 6 个色板 + 自定义）、玻璃透明度 0–100%、雾化 0–60px、玻璃保真度 0–100%。填一样的数，底色就和它「侧栏玻璃跟随全局」时的右侧栏一模一样（可读性钳制、保真度、饱和度 1.3、亮度 1.04、釉层、深色 0.65 染色都照搬，测试里用它的原函数结果做了比对）。
+# 📖 摸鱼小说阅读器
 
-## 兼容性
+DeepSeek Harness 插件 · 在状态栏里偷偷看小说
 
-| 插件 | 处理方式 |
+[![npm](https://img.shields.io/npm/v/dsh-plugin-novel-reader?style=flat-square&logo=npm&label=npm&color=4d6bfe)](https://www.npmjs.com/package/dsh-plugin-novel-reader)
+[![下载量](https://img.shields.io/npm/dm/dsh-plugin-novel-reader?style=flat-square&label=downloads&color=4d6bfe)](https://www.npmjs.com/package/dsh-plugin-novel-reader)
+[![DSH](https://img.shields.io/badge/DSH-0.2.1%2B-4d6bfe?style=flat-square)](https://github.com/deepseek-ai/DeepSeek-Harness)
+[![Node.js](https://img.shields.io/badge/Node.js-22%2B-4d6bfe?style=flat-square&logo=nodedotjs&logoColor=white)](package.json)
+[![License](https://img.shields.io/badge/License-MIT-4d6bfe?style=flat-square)](LICENSE)
+
+</div>
+
+---
+
+## 它能做什么
+
+| 功能 | 说明 |
 |---|---|
-| `dsh-better-sidebar` | 装了它就用 `ctx.betterSidebar.registerTab` 注册「小说」页签（它会再同步到原生右侧栏）；没装就直接注册到 DSH 原生右侧栏（`sidebarRightTabs` + `sidebar.right.pane.tab` 插槽）。两边用同一个 kind（`novel-reader`），不会出现两个入口。 |
-| `dsh-plugin-wallpaper-engine` | 阅读面和速览窗都带 `data-we-surface-preserve`，让壁纸引擎不接管它们的底色，默认用插件自己的毛玻璃。速览窗挂在 `document.body` 下，不调整其他插件的层级。<br>**一键同步**：检测到壁纸引擎时，DSH 设置 → 小说阅读 → 背景里会出现「一键同步壁纸引擎毛玻璃」。开启后侧边栏阅读器变透明，直接透出壁纸引擎给右侧栏画的玻璃；速览窗套用它右侧栏玻璃的同一套配方（模糊、饱和度、亮度、染色、可读性底色、高光，深色主题同样处理），读的是它实时写在 `body` 上的 `--we-*` 变量，所以壁纸引擎里改参数会立刻跟着变。之后再调背景颜色、不透明度或模糊，会自动退出同步。 |
+| **状态栏速览** | 输入框下面那排（`12 轮 88 步 … 41%`）多一个书本图标，鼠标移上去弹出毛玻璃速览窗，移开就收起，点一下可以钉住 |
+| **位置随手挪** | 按住图标左右拖动，它插到状态栏的另一格，旁边的控件平滑让位；设置里还有一条轴可以指定位置，旁边是「回归原位」 |
+| **大小随手改** | 速览窗四边四角都能拖，拖动时显示实时像素尺寸；底边上下拖就是改与图标之间的间距 |
+| **侧边栏阅读** | 右侧栏「小说」页签是完整阅读器，带书架和目录，`←` `→` 翻章 |
+| **老板键** | 默认 `Shift+F1`，一下收起速览窗并关掉侧边栏的「小说」页签，可以自己录 |
+| **格式** | `txt`（UTF-8 / GBK / GB18030 / UTF-16，按「第 x 章」等分章，识别不到就按字数切）· `epub`（目录优先 nav，其次 NCX） |
+| **外观** | 字号、行距、段距、字体、首行缩进、文字颜色；书架和目录浮层可单独设色；毛玻璃与 `dsh-plugin-wallpaper-engine` 同刻度同配方，也可以一键同步 |
 
-状态栏图标挂在官方的 `conversation.composer.dock` 插槽上（和 DSH 自带的活动、用量胶囊同一排，在上下文百分比前面）。
+两种看法的书和进度是同一份。
 
-## 安装（本地开发版）
+## 安装
 
-需要 DSH 0.2.1 及以上。在 DSH 自带的终端里执行（profile 名按自己的改，桌面版默认是 `desktop`）：
+需要 **DSH 0.2.1+** 和 **Node.js 22+**。
 
 ```bash
-dsh plugin --profile desktop add link:D:/dsh-plugin-novel-reader
+dsh plugin --profile desktop add dsh-plugin-novel-reader
 ```
 
-`link:` 是软链接，之后改完代码执行 `npm run build`，再在 DSH 里刷新就能生效。装好后重启 DSH，或用 Ctrl+Shift+R 强制刷新。
+网页宿主把 `desktop` 换成 `web`。装完重启 DSH，或按 `Ctrl+Shift+R` 强制刷新。
+
+也可以从 [Releases](https://github.com/overflow7782/dsh-plugin-novel-reader/releases) 下载 `dsh-plugin-novel-reader.tgz` 直接安装。
 
 卸载：
 
@@ -42,29 +48,25 @@ dsh plugin --profile desktop add link:D:/dsh-plugin-novel-reader
 dsh plugin --profile desktop remove dsh-plugin-novel-reader
 ```
 
-## 数据存放
+## 使用
 
-书的正文、书架和阅读进度存在 DSH 页面的 IndexedDB 里（库名 `dsh-novel-reader`），外观设置存在 localStorage。所有数据都只在本机，不访问网络。卸载插件后数据还在；要清空，在书架里逐本删除即可。
+1. 打开右侧栏，点「小说」，把 `txt` / `epub` 点进来或直接拖进书架
+2. 鼠标移到状态栏的书本图标上，浮出速览窗；点图标可以钉住
+3. 设置 → **小说阅读**，调字号、颜色、玻璃、速览窗大小位置和快捷键
 
-## 开发
+## 兼容性
 
-```
-src/core/      解析（纯函数，node --test 可测）：txt 解码分章、zip 读取、epub 解析
-src/client/    浏览器端：存储、状态、样式、React 组件、apply 入口
-lib/client.js  构建产物（tools/build.mjs 拼接生成，不要手改）
-lib/index.js   Node 端空插件行
-tools/dev.html 本地预览用的假宿主（模拟插槽、状态栏、右侧栏）
-```
+| 插件 | 说明 |
+|---|---|
+| `dsh-better-sidebar` | 装了就用它的 `registerTab` 注册「小说」页签，没装就走 DSH 原生右侧栏，不会出现两个入口 |
+| `dsh-plugin-wallpaper-engine` | 阅读面和速览窗不抢它的底色；检测到它时可以「一键同步毛玻璃」，之后跟着它实时变化 |
 
-```bash
-npm run build     # 生成 lib/client.js
-npm test          # 解析器测试
-npm run check     # 构建 + 语法检查 + 测试
-node tools/serve.mjs   # 打开 http://localhost:5179/tools/dev.html 预览
-```
+状态栏图标挂在官方的 `conversation.composer.dock` 插槽上，和自带的活动、用量胶囊同一排。往这一排插东西的其他插件也能一起换位。
 
-构建不需要任何依赖：源码是 ES 模块，构建时按顺序拼进 DSH 的 `__ModuleLoader__` 包装，`react` / `react-dom` 由宿主提供。
+## 数据与隐私
 
-## 一期范围外
+书的正文、书架和阅读进度存在本机页面的 IndexedDB（库名 `dsh-novel-reader`），外观设置存在 localStorage。插件不访问网络。卸载插件后数据还在，要在书架里逐本删。
 
-在线书源、按 epub 目录里的锚点细分同一文件内的多个章节、图片与插图、书签、全文搜索。
+## 许可
+
+[MIT](LICENSE)
