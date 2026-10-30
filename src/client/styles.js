@@ -63,8 +63,8 @@ const CSS = `
 .nr-row select option{color:#1f2329;background:#fff}
 .nr-row input[type=color]{width:28px;height:24px;padding:0;border:.5px solid color-mix(in srgb,currentColor 25%,transparent);border-radius:6px;background:transparent;cursor:pointer}
 .nr-val{flex:none;width:44px;text-align:right;font-variant-numeric:tabular-nums;opacity:.7;font-size:12px}
-/* 没做完的功能在设置里挂的小标签。 */
-.nr-row label .nr-beta{margin-left:6px;padding:0 5px;border-radius:5px;font-size:10px;line-height:15px;letter-spacing:.04em;text-transform:uppercase;vertical-align:1px;background:color-mix(in srgb,var(--dsw-alias-state-business-primary,#4d6bfe) 14%,transparent);color:var(--dsw-alias-state-business-primary,#4d6bfe)}
+/* 没做完的功能在设置里挂的小标签。放在 label 之外的独立 flex 项上，不会跟着标签宽度被省略。 */
+.nr-row .nr-beta{flex:none;white-space:nowrap;margin-left:-4px;padding:0 5px;border-radius:5px;font-size:10px;line-height:15px;letter-spacing:.04em;text-transform:uppercase;background:color-mix(in srgb,var(--dsw-alias-state-business-primary,#4d6bfe) 14%,transparent);color:var(--dsw-alias-state-business-primary,#4d6bfe)}
 .nr-swatches{display:flex;flex-wrap:wrap;gap:6px}
 .nr-swatch{width:30px;height:30px;padding:0;border-radius:8px;border:.5px solid color-mix(in srgb,currentColor 25%,transparent);cursor:pointer;font-size:13px;font-weight:600;display:grid;place-items:center}
 .nr-swatch[data-active]{outline:2px solid var(--dsw-alias-state-business-primary,#4d6bfe);outline-offset:1px}
@@ -100,8 +100,8 @@ body[data-ds-dark-theme] .nr-surface[data-nr-glass=wallpaper]{--nr-we-tint:calc(
 .nr-peek-head .nr-btn{height:22px;min-width:22px;padding:0 4px;border-radius:6px;font-size:11px}
 .nr-peek-head .nr-peek-title{flex:1;min-width:0;justify-content:flex-start;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .nr-peek-toc{flex:1;min-height:0;overflow-y:auto;padding:0 8px 8px;scrollbar-width:thin}
-.nr-settings-page{--nr-fg:var(--dsw-alias-label-primary,#1f2329);display:flex;flex-direction:column;gap:12px;color:var(--nr-fg);font-family:var(--dsw-font-family,inherit)}
-.nr-settings-page .nr-group{margin:0;padding:12px 10px 8px;border-radius:12px;border:.5px solid var(--dsw-alias-border-l2,rgba(127,127,127,.25));background:var(--dsw-alias-bg-layer-1,transparent)}
+.nr-settings-page{--nr-fg:var(--dsw-alias-label-primary,#1f2329);display:flex;flex-direction:column;gap:16px;color:var(--nr-fg);font-family:var(--dsw-font-family,inherit)}
+.nr-settings-page .nr-group{margin:0;display:flex;flex-direction:column;gap:2px;padding:14px 12px 10px;border-radius:12px;border:.5px solid var(--dsw-alias-border-l2,rgba(127,127,127,.25));background:var(--dsw-alias-bg-layer-1,transparent)}
 .nr-settings-page .nr-row>label{width:120px}
 .nr-settings-page>.nr-row{padding:0}
 .nr-settings-page input[type=checkbox]{appearance:none;-webkit-appearance:none;position:relative;width:36px;height:20px;margin:0 0 0 auto;border-radius:999px;background:color-mix(in srgb,currentColor 22%,transparent);cursor:pointer;transition:background .15s}
@@ -111,8 +111,9 @@ body[data-ds-dark-theme] .nr-surface[data-nr-glass=wallpaper]{--nr-we-tint:calc(
 .nr-kbd{min-width:110px;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px}
 .nr-num{width:64px;height:26px;padding:0 6px;border-radius:6px;border:.5px solid color-mix(in srgb,currentColor 25%,transparent);background:transparent;color:inherit;font:inherit;font-size:12px;font-variant-numeric:tabular-nums}
 .nr-unit{flex:none;font-size:12px;opacity:.6}
-.nr-hint{margin:0 6px 6px;font-size:12px;line-height:1.5;opacity:.62}
-.nr-row .nr-hint{margin:0}
+/* 行尾的「？」：说明走原生 title，不再占版面。margin-left:auto 让它靠右对齐。 */
+.nr-help{flex:none;margin-left:auto;width:16px;height:16px;padding:0;border:.5px solid color-mix(in srgb,currentColor 42%,transparent);border-radius:50%;background:transparent;color:inherit;font:inherit;font-size:10px;line-height:1;opacity:.55;cursor:help}
+.nr-help:hover{opacity:.95}
 .nr-peek-grip{position:absolute;z-index:3;touch-action:none}
 .nr-peek-grip[data-edge=top]{top:0;left:16px;right:16px;height:6px;cursor:ns-resize}
 .nr-peek-grip[data-edge=bottom]{bottom:0;left:16px;right:16px;height:6px;cursor:ns-resize}

@@ -17,12 +17,14 @@ const FONT_OPTIONS = [
 
 const update = (key, value) => settingsStore.update({ [key]: value });
 
-/** labelText 换掉标签文字；badge 在标签后面挂一枚小标签（比如 beta）。 */
-function Row(label, control, labelText, badge) {
+/** labelText 换掉标签文字；badge 在标签后面挂一枚小标签（比如 beta）。
+    标签盒宽度固定、超长省略，所以 badge 得放在 label 外面，否则会跟着被截成「B…」。 */
+function Row(label, control, labelText, badge, badgeTitle) {
   return h(
     'div',
     { className: 'nr-row' },
-    h('label', null, labelText ?? t(label), badge ? h('span', { key: 'badge', className: 'nr-beta' }, badge) : null),
+    h('label', null, labelText ?? t(label)),
+    badge ? h('span', { key: 'badge', className: 'nr-beta', title: badgeTitle }, badge) : null,
     h('div', { className: 'nr-ctl' }, control),
   );
 }
@@ -112,7 +114,7 @@ function DockAxisRow() {
 }
 
 /** 点一下进入录制，按下新的组合键保存；Esc 取消，Backspace 关闭快捷键。老板键和顶栏快捷键共用。 */
-function ComboRow({ k, fallback }) {
+function ComboRow({ k, fallback, hint }) {
   const value = useSettings()[k];
   const [recording, setRecording] = React.useState(false);
   React.useEffect(() => {
@@ -140,12 +142,18 @@ function ComboRow({ k, fallback }) {
   return Row(k, [
     h('button', { key: 'rec', type: 'button', className: 'nr-btn nr-btn-outline nr-kbd', 'data-active': recording || undefined, onClick: () => setRecording((v) => !v) }, recording ? t('bossKeyRecording') : value || t('bossKeyOff')),
     value !== fallback ? h('button', { key: 'def', type: 'button', className: 'nr-btn', onClick: () => update(k, fallback) }, t('reset')) : null,
+    hint ? h(HelpDot, { key: 'help', text: hint }) : null,
   ]);
 }
 
-function CheckRow({ k, badge }) {
+/** 行尾的「？」：把说明塞进原生 title，页面上就不用再挂一长行小字。 */
+function HelpDot({ text }) {
+  return h('button', { type: 'button', className: 'nr-help', title: t(text), 'aria-label': t(text) }, '?');
+}
+
+function CheckRow({ k, badge, badgeTitle }) {
   const value = useSettings()[k];
-  return Row(k, h('input', { type: 'checkbox', checked: value, 'aria-label': t(k), onChange: (e) => update(k, e.target.checked) }), undefined, badge);
+  return Row(k, h('input', { type: 'checkbox', checked: value, 'aria-label': t(k), onChange: (e) => update(k, e.target.checked) }), undefined, badge, badgeTitle);
 }
 
 /** 可以「跟随主题」（空值）的颜色行。 */
@@ -239,25 +247,20 @@ function SettingsView() {
       'groupPeek',
       h(CheckRow, { key: 'pe', k: 'peekEnabled' }),
       h(DockAxisRow, { key: 'dr' }),
-      h('p', { key: 'dh', className: 'nr-hint' }, t('peekDockHint')),
       h(SizeRow, { key: 'pw', k: 'peekWidth', min: 240, max: 1200 }),
       h(SizeRow, { key: 'ph', k: 'peekHeight', min: 80, max: 720 }),
       h(SizeRow, { key: 'pb', k: 'peekBottom', min: 0, max: 800, step: 1 }),
-      h('p', { key: 'rh', className: 'nr-hint' }, t('peekResizeHint')),
       h(CheckRow, { key: 'rc', k: 'peekRightClickClose' }),
       h(CheckRow, { key: 'hh', k: 'peekHeadHidden' }),
-      h(CheckRow, { key: 'sl', k: 'peekSeamless', badge: t('beta') }),
-      h('p', { key: 'slh', className: 'nr-hint' }, t('peekSeamlessHint')),
+      h(CheckRow, { key: 'sl', k: 'peekSeamless', badge: t('beta'), badgeTitle: t('peekSeamlessHint') }),
       h(RangeRow, { key: 'pf', k: 'peekFontSize', min: 11, max: 24, unit: 'px' }),
       h(CheckRow, { key: 'as', k: 'autoScroll' }),
       h(RangeRow, { key: 'sp', k: 'scrollSpeed', min: 4, max: 90, unit: 'px/s' }),
     ),
     Group(
       'groupShortcut',
-      h(ComboRow, { key: 'bk', k: 'bossKey', fallback: 'Shift+F1' }),
-      h('p', { key: 'hint', className: 'nr-hint' }, t('bossKeyHint')),
-      h(ComboRow, { key: 'hk', k: 'peekHeadKey', fallback: 'Shift+F2' }),
-      h('p', { key: 'hhint', className: 'nr-hint' }, t('peekHeadKeyHint')),
+      h(ComboRow, { key: 'bk', k: 'bossKey', fallback: 'Shift+F1', hint: 'bossKeyHint' }),
+      h(ComboRow, { key: 'hk', k: 'peekHeadKey', fallback: 'Shift+F2', hint: 'peekHeadKeyHint' }),
     ),
     h('div', { className: 'nr-row' }, h('button', { type: 'button', className: 'nr-btn nr-btn-outline', onClick: () => settingsStore.reset() }, t('reset'))),
   );
