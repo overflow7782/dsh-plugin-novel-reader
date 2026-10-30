@@ -1,6 +1,6 @@
 {
   "name": "dsh-plugin-novel-reader",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "摸鱼小说阅读器 for DeepSeek Harness：状态栏悬停速览 + 侧边栏阅读，支持 txt / epub，毛玻璃背景可调。兼容 dsh-better-sidebar 与 dsh-plugin-wallpaper-engine。",
   "repository": {
     "type": "git",
