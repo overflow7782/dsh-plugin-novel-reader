@@ -1,0 +1,28 @@
+name: check
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      # 仓库零依赖，不需要 npm install：构建、语法检查、单元测试都在 check 里。
+      - name: Build, syntax check and test
+        run: npm run check
+      - name: The committed client bundle must match the sources
+        run: |
+          if ! git diff --quiet -- lib/; then
+            echo "::error::lib/ is stale. Run 'npm run build' and commit the result."
+            git --no-pager diff --stat -- lib/
+            exit 1
+          fi

@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 先翻一下已有 issue
+    url: https://github.com/overflow7782/dsh-plugin-novel-reader/issues
+    about: 已经报过的问题，可能第一条回复里就有答案。

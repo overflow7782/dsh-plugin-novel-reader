@@ -6,6 +6,7 @@
 
 DeepSeek Harness 插件 · 在状态栏里偷偷看小说
 
+[![check](https://github.com/overflow7782/dsh-plugin-novel-reader/actions/workflows/check.yml/badge.svg)](https://github.com/overflow7782/dsh-plugin-novel-reader/actions/workflows/check.yml)
 [![npm](https://img.shields.io/npm/v/dsh-plugin-novel-reader?style=flat-square&logo=npm&label=npm&color=4d6bfe)](https://www.npmjs.com/package/dsh-plugin-novel-reader)
 [![下载量](https://img.shields.io/npm/dm/dsh-plugin-novel-reader?style=flat-square&label=downloads&color=4d6bfe)](https://www.npmjs.com/package/dsh-plugin-novel-reader)
 [![DSH](https://img.shields.io/badge/DSH-0.2.1%2B-4d6bfe?style=flat-square)](https://github.com/deepseek-ai/DeepSeek-Harness)
@@ -81,6 +82,10 @@ dsh plugin --profile desktop remove dsh-plugin-novel-reader
 ## 数据与隐私
 
 书的正文、书架和阅读进度存在本机页面的 IndexedDB（库名 `dsh-novel-reader`），外观设置存在 localStorage。插件不访问网络。卸载插件后数据还在，要在书架里逐本删。
+
+## 参与开发
+
+欢迎 fork 和 PR，动手前先读 [CONTRIBUTING.md](https://github.com/overflow7782/dsh-plugin-novel-reader/blob/master/.github/CONTRIBUTING.md)。两条硬要求：`npm run check` 必须全绿；改了 `src/` 要把 `lib/client.js` 一起提交——CI 会重新构建并比对产物，产物没同步会直接失败。
 
 ## 许可
 

@@ -1,0 +1,31 @@
+name: 功能建议
+description: 希望加上某个功能，或者改掉某个设计
+labels: [enhancement]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: 想要什么
+      description: 描述你希望看到的行为。
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: 解决什么问题
+      description: 你现在是怎么绕过去的？为什么绕不过去？
+    validations:
+      required: true
+  - type: textarea
+    id: how
+    attributes:
+      label: 你设想的做法（可选）
+      description: 如果知道该动哪个文件、哪个设置项，写在这里可以更快落地。
+  - type: checkboxes
+    id: fit
+    attributes:
+      label: 是否契合这个插件的定位
+      description: 本插件的定位是「在 DSH 里偷偷看小说」：本地文件、不联网、不打断工作流。
+      options:
+        - label: 这个需求不需要联网，也不需要上传任何数据
+          required: true

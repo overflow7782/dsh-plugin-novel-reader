@@ -6,6 +6,7 @@
 
 A DeepSeek Harness plugin · read novels in the status bar
 
+[![check](https://github.com/overflow7782/dsh-plugin-novel-reader/actions/workflows/check.yml/badge.svg)](https://github.com/overflow7782/dsh-plugin-novel-reader/actions/workflows/check.yml)
 [![npm](https://img.shields.io/npm/v/dsh-plugin-novel-reader?style=flat-square&logo=npm&label=npm&color=4d6bfe)](https://www.npmjs.com/package/dsh-plugin-novel-reader)
 [![downloads](https://img.shields.io/npm/dm/dsh-plugin-novel-reader?style=flat-square&label=downloads&color=4d6bfe)](https://www.npmjs.com/package/dsh-plugin-novel-reader)
 [![DSH](https://img.shields.io/badge/DSH-0.2.1%2B-4d6bfe?style=flat-square)](https://github.com/deepseek-ai/DeepSeek-Harness)
@@ -81,6 +82,10 @@ Planned features — suggestions welcome.
 ## Data and privacy
 
 Book text, the shelf and reading progress live in the page's IndexedDB (database `dsh-novel-reader`); appearance settings live in localStorage. The plugin makes no network requests. Data survives uninstalling — remove books from the shelf to clear it.
+
+## Contributing
+
+Forks and pull requests are welcome. Read [CONTRIBUTING.md](https://github.com/overflow7782/dsh-plugin-novel-reader/blob/master/.github/CONTRIBUTING.md) first. Two hard rules: `npm run check` must pass, and any `src/` change must ship with the rebuilt `lib/client.js` — CI rebuilds and diffs the bundle, so a stale one fails the build.
 
 ## License
 

@@ -1,0 +1,53 @@
+name: Bug 报告
+description: 有东西不对，或者样子坏了
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        先搜一下已有 issue，可能已经有人报过了。
+        界面相关的问题请一定附截图，很多问题光靠描述定位不了。
+  - type: textarea
+    id: what
+    attributes:
+      label: 出了什么问题
+      description: 你看到的实际行为，以及你期望的行为。
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 怎么复现
+      placeholder: |
+        1. 打开设置 → 小说阅读
+        2. 把「速览宽度」拖到 240
+        3. 速览窗左右抖动
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: 插件版本
+      description: 设置页底部，或 package.json 里的 version。
+      placeholder: 0.6.1
+    validations:
+      required: true
+  - type: input
+    id: dsh
+    attributes:
+      label: DSH 版本
+      placeholder: 例如 0.42.0
+  - type: dropdown
+    id: theme
+    attributes:
+      label: 主题
+      options:
+        - 亮色
+        - 暗色
+        - 壁纸引擎（毛玻璃 / 透明）
+        - 其他主题
+  - type: textarea
+    id: extra
+    attributes:
+      label: 截图或补充
+      description: 直接拖图片进来即可。控制台报错也贴这里。
