@@ -228,7 +228,7 @@ function SettingsView() {
   const s = useSettings();
   return h(
     'div',
-    null,
+    { className: 'nr-settings-body' },
     Group(
       'groupText',
       h(RangeRow, { key: 'fs', k: 'fontSize', min: 12, max: 30, unit: 'px' }),
