@@ -17,8 +17,14 @@ const FONT_OPTIONS = [
 
 const update = (key, value) => settingsStore.update({ [key]: value });
 
-function Row(label, control, labelText) {
-  return h('div', { className: 'nr-row' }, h('label', null, labelText ?? t(label)), h('div', { className: 'nr-ctl' }, control));
+/** labelText 换掉标签文字；badge 在标签后面挂一枚小标签（比如 beta）。 */
+function Row(label, control, labelText, badge) {
+  return h(
+    'div',
+    { className: 'nr-row' },
+    h('label', null, labelText ?? t(label), badge ? h('span', { key: 'badge', className: 'nr-beta' }, badge) : null),
+    h('div', { className: 'nr-ctl' }, control),
+  );
 }
 
 function RangeRow({ k, min, max, step = 1, unit = '' }) {
@@ -137,9 +143,9 @@ function ComboRow({ k, fallback }) {
   ]);
 }
 
-function CheckRow({ k }) {
+function CheckRow({ k, badge }) {
   const value = useSettings()[k];
-  return Row(k, h('input', { type: 'checkbox', checked: value, 'aria-label': t(k), onChange: (e) => update(k, e.target.checked) }));
+  return Row(k, h('input', { type: 'checkbox', checked: value, 'aria-label': t(k), onChange: (e) => update(k, e.target.checked) }), undefined, badge);
 }
 
 /** 可以「跟随主题」（空值）的颜色行。 */
@@ -240,7 +246,7 @@ function SettingsView() {
       h('p', { key: 'rh', className: 'nr-hint' }, t('peekResizeHint')),
       h(CheckRow, { key: 'rc', k: 'peekRightClickClose' }),
       h(CheckRow, { key: 'hh', k: 'peekHeadHidden' }),
-      h(CheckRow, { key: 'sl', k: 'peekSeamless' }),
+      h(CheckRow, { key: 'sl', k: 'peekSeamless', badge: t('beta') }),
       h('p', { key: 'slh', className: 'nr-hint' }, t('peekSeamlessHint')),
       h(RangeRow, { key: 'pf', k: 'peekFontSize', min: 11, max: 24, unit: 'px' }),
       h(CheckRow, { key: 'as', k: 'autoScroll' }),

@@ -63,6 +63,8 @@ const CSS = `
 .nr-row select option{color:#1f2329;background:#fff}
 .nr-row input[type=color]{width:28px;height:24px;padding:0;border:.5px solid color-mix(in srgb,currentColor 25%,transparent);border-radius:6px;background:transparent;cursor:pointer}
 .nr-val{flex:none;width:44px;text-align:right;font-variant-numeric:tabular-nums;opacity:.7;font-size:12px}
+/* 没做完的功能在设置里挂的小标签。 */
+.nr-row label .nr-beta{margin-left:6px;padding:0 5px;border-radius:5px;font-size:10px;line-height:15px;letter-spacing:.04em;text-transform:uppercase;vertical-align:1px;background:color-mix(in srgb,var(--dsw-alias-state-business-primary,#4d6bfe) 14%,transparent);color:var(--dsw-alias-state-business-primary,#4d6bfe)}
 .nr-swatches{display:flex;flex-wrap:wrap;gap:6px}
 .nr-swatch{width:30px;height:30px;padding:0;border-radius:8px;border:.5px solid color-mix(in srgb,currentColor 25%,transparent);cursor:pointer;font-size:13px;font-weight:600;display:grid;place-items:center}
 .nr-swatch[data-active]{outline:2px solid var(--dsw-alias-state-business-primary,#4d6bfe);outline-offset:1px}
