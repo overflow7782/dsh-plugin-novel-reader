@@ -25,8 +25,10 @@ A DeepSeek Harness plugin · read novels in the status bar
 | **Resize it** | All four edges and four corners of the peek window resize it, with a live pixel readout; dragging the bottom edge changes the gap above the icon |
 | **Reader in the sidebar** | The "Novels" tab in the right sidebar is a full reader with a shelf and table of contents, `←` `→` to change chapters |
 | **Boss key** | `Shift+F1` by default — dismisses the peek window and closes the "Novels" sidebar tab; right-clicking the peek window only dismisses it |
+| **Collapse the top bar** | `Shift+F2` by default, or the small arrow at the top-right of the peek window: the button row folds away and the text fills the whole window; hover the little bar at the top edge to bring it back. There is a switch in the settings too |
 | **Formats** | `txt` (UTF-8 / GBK / GB18030 / UTF-16, split on chapter headings, falling back to length) · `epub` (nav first, then NCX) |
 | **Appearance** | Font size, line and paragraph spacing, typeface, first-line indent, text color; separate colors for the shelf and TOC overlays; the glass uses the same scale and formula as `dsh-plugin-wallpaper-engine` and can sync to it in one click |
+| **Disguise as the composer** | The peek window borrows the composer card's own fill and blur and drops its border and shadow, so it reads as an extension of the input box |
 
 ## Install
 

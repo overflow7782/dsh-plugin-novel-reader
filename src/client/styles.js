@@ -72,8 +72,22 @@ const CSS = `
 .nr-dock-btn[data-pinned]{color:var(--dsw-alias-state-business-primary,#4d6bfe)}
 .nr-dock-btn:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary,#4d6bfe);outline-offset:-2px}
 
-.nr-peek{position:fixed;z-index:1000;display:flex;flex-direction:column;border-radius:12px;border:.5px solid color-mix(in srgb,var(--nr-fg) 18%,transparent);box-shadow:0 10px 32px rgba(0,0,0,.18),0 1px 3px rgba(0,0,0,.08),inset 0 1px 0 rgba(255,255,255,.32),inset 0 0 0 .5px rgba(255,255,255,.06);overflow:hidden;animation:nr-fade .12s ease-out}
-.nr-peek-head{flex:none;display:flex;align-items:center;gap:2px;height:28px;padding:0 6px 0 8px;font-size:11px}
+/* 圆角跟随 DSH 输入框那张卡片：它用的是 --dsw-radius-panel（当前 28px），主题换了这边也自动跟着换。 */
+.nr-peek{position:fixed;z-index:1000;display:flex;flex-direction:column;border-radius:var(--dsw-radius-panel,12px);border:.5px solid color-mix(in srgb,var(--nr-fg) 18%,transparent);box-shadow:0 10px 32px rgba(0,0,0,.18),0 1px 3px rgba(0,0,0,.08),inset 0 1px 0 rgba(255,255,255,.32),inset 0 0 0 .5px rgba(255,255,255,.06);overflow:hidden;animation:nr-fade .12s ease-out}
+/* 右边留 20px：右上角的缩放手柄是 16px，别和「下一章」挤在一起。
+   收起时高度归零、正文顺势长上来，所以高度也要能过渡。 */
+/* 伪装输入框模式：底色和模糊都直接借输入框那张卡片的，边框、内嵌高光、投影全去掉。
+   输入卡的底色是 --dsw-specific-input-major（壁纸引擎在 body[data-we-glass-page] 上把它改写成
+   「可读性底 + 釉色」的 color-mix，所以这块天然带同样的可读性下限，字不会被背后的内容咬）；
+   输入卡的模糊则由 [data-composer-card]::before 承载，配方与这里逐字相同（同一批 --we-* 变量）。
+   选 .nr-peek.nr-surface 是为了压过 [data-nr-glass=wallpaper] / [data-ds-dark-theme] 那两组同权重的规则。
+   边框只改颜色不改宽度，尺寸和缩放手柄的计算都不用跟着变。 */
+.nr-peek.nr-surface[data-seamless]{background-color:var(--dsw-specific-input-major,var(--dsw-alias-bg-layer-1,#fff));background-image:none;-webkit-backdrop-filter:blur(var(--we-blur,var(--nr-blur,16px))) saturate(var(--we-saturate,1.8)) brightness(var(--we-glass-brightness,1.04)) contrast(1.01);backdrop-filter:blur(var(--we-blur,var(--nr-blur,16px))) saturate(var(--we-saturate,1.8)) brightness(var(--we-glass-brightness,1.04)) contrast(1.01);border-color:transparent;box-shadow:none}
+.nr-peek-head{flex:none;display:flex;align-items:center;gap:2px;height:28px;padding:0 20px 0 10px;font-size:11px;overflow:hidden;visibility:visible;transition:height .18s cubic-bezier(.32,.72,0,1),opacity .14s ease,padding .18s ease,visibility 0s}
+.nr-peek-head[data-collapsed]{height:0;padding:0;opacity:0;pointer-events:none;visibility:hidden;transition:height .18s cubic-bezier(.32,.72,0,1),opacity .14s ease,padding .18s ease,visibility 0s linear .18s}
+/* 顶栏收起后，指针贴近窗口顶部才露出来的小箭头，用来把顶栏叫回来。 */
+.nr-peek-unhide{position:absolute;top:0;left:50%;transform:translateX(-50%);z-index:4;display:flex;align-items:center;justify-content:center;width:36px;height:13px;padding:0;border:none;border-radius:0 0 8px 8px;background:color-mix(in srgb,var(--nr-fg) 14%,transparent);color:inherit;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .14s ease}
+.nr-peek-unhide[data-show]{opacity:.92;pointer-events:auto}
 .nr-peek-body{position:relative;flex:1;min-height:0;overflow-y:auto;padding:2px 14px 10px;scrollbar-width:none;-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 10px,#000 calc(100% - 14px),transparent 100%);mask-image:linear-gradient(to bottom,transparent 0,#000 10px,#000 calc(100% - 14px),transparent 100%)}
 .nr-peek-body::-webkit-scrollbar{display:none}
 .nr-peek-body .nr-chapter-title{margin:4px 0 10px;font-size:calc(var(--nr-size) * 1.1)}

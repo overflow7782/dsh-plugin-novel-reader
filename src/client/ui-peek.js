@@ -3,7 +3,7 @@
 import { currentPercent, gotoChapter, nextChapter, prevChapter } from './state.js';
 import { settingsStore, surfaceVars } from './settings.js';
 import { t } from './i18n.js';
-import { BookIcon, ChevronLeftIcon, ChevronRightIcon, PauseIcon, PlayIcon } from './icons.js';
+import { BookIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, ChevronUpIcon, PauseIcon, PlayIcon } from './icons.js';
 import { ChapterText, pickFiles, useChapterScroll, useInitReader, useReader, useSettings } from './ui-shared.js';
 import { DOCK_RANK_AUTO, RESIZE_GRIPS, applyGrip, dockRankFor, placePeek } from '../core/peek-geom.js';
 import { clearCellOrder, dockOf, itemOf, itemsOf, placeCell } from './dock-order.js';
@@ -141,11 +141,16 @@ function PeekPopover({ anchor, onEnter, onLeave, onHide, hold }) {
     return () => window.removeEventListener('resize', update);
   }, []);
   const pos = place(anchor, liveSize ?? sizeOf(settings));
-  const onScroll = useChapterScroll(scroll, reader, !showToc);
-  useAutoScroll(scroll, running && !showToc && reader.book !== null, settings.scrollSpeed, lastWheel);
+  // 收起顶栏时正文独占整个窗口，目录也跟着收起来（顶栏没了就点不到目录按钮）。
+  const headHidden = settings.peekHeadHidden;
+  const tocOpen = showToc && !headHidden;
+  const onScroll = useChapterScroll(scroll, reader, !tocOpen);
+  useAutoScroll(scroll, running && !tocOpen && reader.book !== null, settings.scrollSpeed, lastWheel);
 
   // ←/→ 换章：鼠标停在速览窗上时总是生效；否则焦点在输入框里（正在打字）就不拦截。
   const hovered = React.useRef(false);
+  // 收起顶栏后那个下箭头只在指针贴近窗口顶部时才露出来，不然一直挡着正文第一行。
+  const [hot, setHot] = React.useState(false);
   React.useEffect(() => {
     const onKey = (event) => {
       if (event.altKey || event.ctrlKey || event.metaKey || (!hovered.current && isEditable(event.target))) return;
@@ -170,13 +175,19 @@ function PeekPopover({ anchor, onEnter, onLeave, onHide, hold }) {
       'data-novel-reader': 'peek',
       'data-we-surface-preserve': '',
       'data-nr-glass': settings.glassSync ? 'wallpaper' : undefined,
+      'data-seamless': settings.peekSeamless || undefined,
       style: { ...surfaceVars(settings, true), left: pos.left, bottom: pos.bottom, width: pos.width, height: pos.height },
+      onPointerMove: (event) => {
+        const box = event.currentTarget.getBoundingClientRect();
+        setHot(event.clientY - box.top <= 22);
+      },
       onMouseEnter: () => {
         hovered.current = true;
         onEnter();
       },
       onMouseLeave: () => {
         hovered.current = false;
+        setHot(false);
         onLeave();
       },
       // 右键速览窗直接收起（设置里可关）；关掉时保留浏览器原生右键菜单。
@@ -198,7 +209,7 @@ function PeekPopover({ anchor, onEnter, onLeave, onHide, hold }) {
       : [
           h(
             'div',
-            { key: 'head', className: 'nr-peek-head nr-muted' },
+            { key: 'head', className: 'nr-peek-head nr-muted', 'data-collapsed': headHidden || undefined, 'aria-hidden': headHidden || undefined },
             headButton('prev', t('prevChapter'), ChevronLeftIcon, () => {
               setShowToc(false);
               prevChapter();
@@ -214,8 +225,23 @@ function PeekPopover({ anchor, onEnter, onLeave, onHide, hold }) {
               setShowToc(false);
               nextChapter();
             }, index >= book.chapters.length - 1),
+            headButton('hide', t('peekHeadHide'), ChevronUpIcon, () => settingsStore.update({ peekHeadHidden: true })),
           ),
-          showToc
+          h(
+            'button',
+            {
+              key: 'unhide',
+              type: 'button',
+              className: 'nr-peek-unhide',
+              title: t('peekHeadShow'),
+              'aria-label': t('peekHeadShow'),
+              'aria-hidden': headHidden && hot ? undefined : 'true',
+              'data-show': headHidden && hot ? '1' : undefined,
+              onClick: () => settingsStore.update({ peekHeadHidden: false }),
+            },
+            h(ChevronDownIcon, { size: 12 }),
+          ),
+          tocOpen
             ? h(PeekToc, { key: 'toc', reader, onPick: () => setShowToc(false) })
             : h(
                 'div',

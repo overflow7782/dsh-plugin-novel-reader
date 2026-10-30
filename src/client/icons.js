@@ -17,3 +17,5 @@ export const ChevronLeftIcon = ({ size = 16 }) => svg(size, [path('M15 6l-6 6 6 
 export const PlayIcon = ({ size = 16 }) => svg(size, [path('M8 5.5v13l10-6.5z')]);
 export const PauseIcon = ({ size = 16 }) => svg(size, [path('M9 5.5v13'), path('M15 5.5v13')]);
 export const ChevronRightIcon =({ size = 16 }) => svg(size, [path('M9 6l6 6-6 6')]);
+export const ChevronUpIcon = ({ size = 16 }) => svg(size, [path('M6 15l6-6 6 6')]);
+export const ChevronDownIcon = ({ size = 16 }) => svg(size, [path('M6 9l6 6 6-6')]);

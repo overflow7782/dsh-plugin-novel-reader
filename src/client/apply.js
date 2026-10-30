@@ -75,22 +75,31 @@ function hideReader(ctx) {
 }
 
 /**
- * 老板键用插件自己的按键监听，而不是 DSH 的快捷键服务：那边 Web 端只放行少数组合、
+ * 老板键和「顶栏快捷键」用插件自己的按键监听，而不是 DSH 的快捷键服务：那边 Web 端只放行少数组合、
  * Linux 上单 Shift 也算「缺修饰键」，Shift+F1 会被直接拒绝注册。键位在本插件设置页里录制。
  */
-function registerBossKey(ctx) {
+function registerShortcuts(ctx) {
   ctx.effect(() => {
     const onKey = (event) => {
       if (event.repeat || isRecordingCombo()) return;
-      const combo = settingsStore.get().bossKey;
-      if (combo === '' || comboOf(event) !== combo) return;
-      event.preventDefault();
-      event.stopPropagation();
-      hideReader(ctx);
+      const current = settingsStore.get();
+      const combo = comboOf(event);
+      if (combo === '') return;
+      if (current.bossKey !== '' && combo === current.bossKey) {
+        event.preventDefault();
+        event.stopPropagation();
+        hideReader(ctx);
+        return;
+      }
+      if (current.peekHeadKey !== '' && combo === current.peekHeadKey) {
+        event.preventDefault();
+        event.stopPropagation();
+        settingsStore.update({ peekHeadHidden: !current.peekHeadHidden });
+      }
     };
     window.addEventListener('keydown', onKey, true);
     return () => window.removeEventListener('keydown', onKey, true);
-  }, 'novel-reader: boss key');
+  }, 'novel-reader: shortcuts');
 }
 
 function registerSidebar(ctx) {
@@ -165,5 +174,5 @@ export function apply(ctx) {
     ctx.slots.register({ name: 'conversation.composer.dock', id: 'novel-reader', order: 5, locale: NS, label: () => t('dockLabel') }, DockSlot),
   );
   registerSidebar(ctx);
-  registerBossKey(ctx);
+  registerShortcuts(ctx);
 }

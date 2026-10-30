@@ -33,6 +33,11 @@ export const DEFAULT_SETTINGS = Object.freeze({
   bossKey: 'Shift+F1',
   peekWidth: 420,
   peekHeight: 168,
+  /** 收起速览窗的顶部栏，正文独占整个窗口；空串快捷键 = 关闭。 */
+  peekHeadHidden: false,
+  peekHeadKey: 'Shift+F2',
+  /** 伪装输入框模式：去掉速览窗四周的描边，贴着输入框放时看不出是另一块面板。 */
+  peekSeamless: false,
   /** 速览窗底边离状态栏图标上方的距离（px）；拖速览窗的底边会改它。 */
   peekBottom: 8,
   /** 图标在状态栏里站第几格（0 = 最左）；-1 = 不插手，保持注册顺序。拖图标会改它。 */
@@ -69,6 +74,8 @@ const RANGES = {
 const COLOR_KEYS = ['textColor', 'sheetBg', 'glassColorLight', 'glassColorDark'];
 /** 允许为空串（= 跟随主题）的颜色键。 */
 const OPTIONAL_COLOR_KEYS = ['textColor', 'sheetBg'];
+/** 值是快捷键组合的键（格式由 COMBO_RE 把关，空串 = 关闭）。 */
+const COMBO_KEYS = ['bossKey', 'peekHeadKey'];
 
 function sanitize(raw) {
   const source = raw !== null && typeof raw === 'object' ? raw : {};
@@ -83,7 +90,7 @@ function sanitize(raw) {
       out[key] = value;
     } else if (key === 'fontFamily' && typeof value === 'string' && value in FONT_STACKS) {
       out[key] = value;
-    } else if (key === 'bossKey' && typeof value === 'string' && (value === '' || COMBO_RE.test(value))) {
+    } else if (COMBO_KEYS.includes(key) && typeof value === 'string' && (value === '' || COMBO_RE.test(value))) {
       out[key] = value;
     } else if (COLOR_KEYS.includes(key) && typeof value === 'string' && (/^#[0-9a-f]{6}$/i.test(value) || (value === '' && OPTIONAL_COLOR_KEYS.includes(key)))) {
       out[key] = value.toLowerCase();

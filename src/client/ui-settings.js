@@ -105,9 +105,9 @@ function DockAxisRow() {
   ]);
 }
 
-/** 点一下进入录制，按下新的组合键保存；Esc 取消，Backspace 关闭快捷键。 */
-function BossKeyRow() {
-  const value = useSettings().bossKey;
+/** 点一下进入录制，按下新的组合键保存；Esc 取消，Backspace 关闭快捷键。老板键和顶栏快捷键共用。 */
+function ComboRow({ k, fallback }) {
+  const value = useSettings()[k];
   const [recording, setRecording] = React.useState(false);
   React.useEffect(() => {
     if (!recording) return;
@@ -117,12 +117,12 @@ function BossKeyRow() {
       event.stopPropagation();
       if (event.key === 'Escape') return setRecording(false);
       if (event.key === 'Backspace' && !event.ctrlKey && !event.altKey && !event.shiftKey && !event.metaKey) {
-        update('bossKey', '');
+        update(k, '');
         return setRecording(false);
       }
       const combo = comboOf(event);
       if (!isUsableCombo(combo)) return;
-      update('bossKey', combo);
+      update(k, combo);
       setRecording(false);
     };
     window.addEventListener('keydown', onKey, true);
@@ -130,10 +130,10 @@ function BossKeyRow() {
       window.removeEventListener('keydown', onKey, true);
       setRecordingCombo(false);
     };
-  }, [recording]);
-  return Row('bossKey', [
+  }, [recording, k]);
+  return Row(k, [
     h('button', { key: 'rec', type: 'button', className: 'nr-btn nr-btn-outline nr-kbd', 'data-active': recording || undefined, onClick: () => setRecording((v) => !v) }, recording ? t('bossKeyRecording') : value || t('bossKeyOff')),
-    value !== 'Shift+F1' ? h('button', { key: 'def', type: 'button', className: 'nr-btn', onClick: () => update('bossKey', 'Shift+F1') }, t('reset')) : null,
+    value !== fallback ? h('button', { key: 'def', type: 'button', className: 'nr-btn', onClick: () => update(k, fallback) }, t('reset')) : null,
   ]);
 }
 
@@ -239,11 +239,20 @@ function SettingsView() {
       h(SizeRow, { key: 'pb', k: 'peekBottom', min: 0, max: 800, step: 1 }),
       h('p', { key: 'rh', className: 'nr-hint' }, t('peekResizeHint')),
       h(CheckRow, { key: 'rc', k: 'peekRightClickClose' }),
+      h(CheckRow, { key: 'hh', k: 'peekHeadHidden' }),
+      h(CheckRow, { key: 'sl', k: 'peekSeamless' }),
+      h('p', { key: 'slh', className: 'nr-hint' }, t('peekSeamlessHint')),
       h(RangeRow, { key: 'pf', k: 'peekFontSize', min: 11, max: 24, unit: 'px' }),
       h(CheckRow, { key: 'as', k: 'autoScroll' }),
       h(RangeRow, { key: 'sp', k: 'scrollSpeed', min: 4, max: 90, unit: 'px/s' }),
     ),
-    Group('groupShortcut', h(BossKeyRow, { key: 'bk' }), h('p', { key: 'hint', className: 'nr-hint' }, t('bossKeyHint'))),
+    Group(
+      'groupShortcut',
+      h(ComboRow, { key: 'bk', k: 'bossKey', fallback: 'Shift+F1' }),
+      h('p', { key: 'hint', className: 'nr-hint' }, t('bossKeyHint')),
+      h(ComboRow, { key: 'hk', k: 'peekHeadKey', fallback: 'Shift+F2' }),
+      h('p', { key: 'hhint', className: 'nr-hint' }, t('peekHeadKeyHint')),
+    ),
     h('div', { className: 'nr-row' }, h('button', { type: 'button', className: 'nr-btn nr-btn-outline', onClick: () => settingsStore.reset() }, t('reset'))),
   );
 }
