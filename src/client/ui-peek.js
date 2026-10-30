@@ -220,11 +220,11 @@ function PeekPopover({ anchor, onEnter, onLeave, onHide, hold }) {
               `${book.meta.title} · ${chapter.title}`,
             ),
             h('span', { key: 'pct', style: { flex: 'none', padding: '0 4px' } }, `${currentPercent()}%`),
-            headButton('play', running ? t('pause') : t('resume'), running ? PauseIcon : PlayIcon, () => setRunning((v) => !v), showToc),
             headButton('next', t('nextChapter'), ChevronRightIcon, () => {
               setShowToc(false);
               nextChapter();
             }, index >= book.chapters.length - 1),
+            headButton('play', running ? t('pause') : t('resume'), running ? PauseIcon : PlayIcon, () => setRunning((v) => !v), showToc),
             headButton('hide', t('peekHeadHide'), ChevronUpIcon, () => settingsStore.update({ peekHeadHidden: true })),
           ),
           h(

@@ -1,6 +1,7 @@
 // 两种阅读面共用的 hooks 与小组件。React / h 由构建前言提供（宿主的 react）。
 /* global React, h */
 import { readerStore, importFiles, reportProgress, initReader } from './state.js';
+import { fracAt, scrollTopFor } from '../core/scroll-frac.js';
 import { settingsStore } from './settings.js';
 import { t } from './i18n.js';
 import { PlusIcon } from './icons.js';
@@ -51,20 +52,20 @@ function paraNodes(el) {
   return el.querySelectorAll('[data-i]');
 }
 
-function scrollToPara(el, para) {
-  if (para <= 0) {
+function scrollToPara(el, para, frac) {
+  if (para <= 0 && !(frac > 0)) {
     el.scrollTop = 0;
     return;
   }
   const node = el.querySelector(`[data-i="${para}"]`);
-  el.scrollTop = node === null ? el.scrollHeight : Math.max(0, node.offsetTop - 6);
+  el.scrollTop = node === null ? el.scrollHeight : scrollTopFor(node.offsetTop, node.offsetHeight, frac);
 }
 
-/** 二分找视口顶部的第一个段落。 */
-function topPara(el) {
+/** 二分找视口顶部的第一个段落，顺带算出滚进了这段的多少。 */
+function topSpot(el) {
   const nodes = paraNodes(el);
-  if (nodes.length === 0) return 0;
-  if (el.scrollTop + el.clientHeight >= el.scrollHeight - 2) return nodes.length - 1;
+  if (nodes.length === 0) return { para: 0, frac: 0 };
+  if (el.scrollTop + el.clientHeight >= el.scrollHeight - 2) return { para: nodes.length - 1, frac: 1 };
   const top = el.scrollTop + 4;
   let lo = 0;
   let hi = nodes.length - 1;
@@ -74,7 +75,8 @@ function topPara(el) {
     if (node.offsetTop + node.offsetHeight > top) hi = mid;
     else lo = mid + 1;
   }
-  return lo;
+  const node = nodes[lo];
+  return { para: lo, frac: fracAt(node.offsetTop, node.offsetHeight, el.scrollTop) };
 }
 
 /**
@@ -85,7 +87,8 @@ export function useChapterScroll(ref, reader, visible) {
   const { book, progress, jump } = reader;
   React.useLayoutEffect(() => {
     if (!visible || book === null || ref.current === null) return;
-    scrollToPara(ref.current, readerStore.get().progress.para);
+    const spot = readerStore.get().progress;
+    scrollToPara(ref.current, spot.para, spot.frac);
   }, [book, jump, progress.chapter, visible]);
   const frame = React.useRef(0);
   return React.useCallback(() => {
@@ -94,7 +97,10 @@ export function useChapterScroll(ref, reader, visible) {
       frame.current = 0;
       const el = ref.current;
       const current = readerStore.get();
-      if (el !== null && current.book !== null) reportProgress(current.progress.chapter, topPara(el));
+      if (el !== null && current.book !== null) {
+        const spot = topSpot(el);
+        reportProgress(current.progress.chapter, spot.para, spot.frac);
+      }
     });
   }, []);
 }

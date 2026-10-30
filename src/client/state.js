@@ -10,7 +10,7 @@ let state = {
   shelf: [],
   /** 已加载的当前书：{ meta, chapters } */
   book: null,
-  progress: { chapter: 0, para: 0 },
+  progress: { chapter: 0, para: 0, frac: 0 },
   /** 显式跳转（换章、目录跳转、打开书）时递增，阅读面据此重新定位；滚动产生的进度变化不递增。 */
   jump: 0,
   busy: '',
@@ -42,7 +42,7 @@ function rememberCurrent(id) {
 
 function ratioOf(book, progress) {
   const chapter = book.chapters[progress.chapter];
-  const within = chapter && chapter.paras.length > 0 ? progress.para / chapter.paras.length : 0;
+  const within = chapter && chapter.paras.length > 0 ? (progress.para + (progress.frac ?? 0)) / chapter.paras.length : 0;
   return Math.min(1, (progress.chapter + within) / book.chapters.length);
 }
 
@@ -90,8 +90,9 @@ export async function openBook(id) {
     if (stored === undefined) throw new Error('书的正文丢失了，请重新导入');
     const chapter = Math.min(meta.progress?.chapter ?? 0, stored.chapters.length - 1);
     const para = meta.progress?.para ?? 0;
+    const frac = meta.progress?.frac ?? 0;
     rememberCurrent(id);
-    set({ book: { meta, chapters: stored.chapters }, progress: { chapter, para }, jump: state.jump + 1, busy: '' });
+    set({ book: { meta, chapters: stored.chapters }, progress: { chapter, para, frac }, jump: state.jump + 1, busy: '' });
   } catch (error) {
     set({ busy: '', error: String(error?.message ?? error) });
   }
@@ -136,18 +137,19 @@ export async function importFiles(files) {
   }
 }
 
-/** 阅读面滚动时上报当前段落（不触发重新定位）。 */
-export function reportProgress(chapter, para) {
+/** 阅读面滚动时上报当前段落与段内比例（不触发重新定位）。 */
+export function reportProgress(chapter, para, frac = 0) {
   if (state.book === null) return;
-  if (state.progress.chapter === chapter && state.progress.para === para) return;
-  set({ progress: { chapter, para } });
+  const { chapter: atChapter, para: atPara, frac: atFrac = 0 } = state.progress;
+  if (atChapter === chapter && atPara === para && Math.abs(atFrac - frac) < 0.01) return;
+  set({ progress: { chapter, para, frac } });
   scheduleSave();
 }
 
 export function gotoChapter(index, para = 0) {
   const book = state.book;
   if (book === null || index < 0 || index >= book.chapters.length) return false;
-  set({ progress: { chapter: index, para }, jump: state.jump + 1 });
+  set({ progress: { chapter: index, para, frac: 0 }, jump: state.jump + 1 });
   scheduleSave();
   return true;
 }

@@ -61,7 +61,7 @@ export async function saveBook(book) {
       chapterCount: chapters.length,
       addedAt: prev?.addedAt ?? Date.now(),
       lastReadAt: Date.now(),
-      progress: prev?.progress ?? { chapter: 0, para: 0, ratio: 0 },
+      progress: prev?.progress ?? { chapter: 0, para: 0, frac: 0, ratio: 0 },
     };
     if (t === null) {
       memory.shelf.set(book.id, entry);

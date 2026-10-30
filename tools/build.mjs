@@ -15,6 +15,7 @@ const ORDER = [
   'core/book.js',
   'core/glass.js',
   'core/peek-geom.js',
+  'core/scroll-frac.js',
   'client/db.js',
   'client/settings.js',
   'client/i18n.js',
