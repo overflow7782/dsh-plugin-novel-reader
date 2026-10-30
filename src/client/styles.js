@@ -101,7 +101,7 @@ body[data-ds-dark-theme] .nr-surface[data-nr-glass=wallpaper]{--nr-we-tint:calc(
 .nr-peek-head .nr-peek-title{flex:1;min-width:0;justify-content:flex-start;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .nr-peek-toc{flex:1;min-height:0;overflow-y:auto;padding:0 8px 8px;scrollbar-width:thin}
 .nr-settings-page{--nr-fg:var(--dsw-alias-label-primary,#1f2329);display:flex;flex-direction:column;gap:16px;color:var(--nr-fg);font-family:var(--dsw-font-family,inherit)}
-.nr-settings-page .nr-group{margin:0;display:flex;flex-direction:column;gap:2px;padding:14px 12px 10px;border-radius:12px;border:.5px solid var(--dsw-alias-border-l2,rgba(127,127,127,.25));background:var(--dsw-alias-bg-layer-1,transparent)}
+.nr-settings-page .nr-group{margin:0;display:flex;flex-direction:column;gap:2px;padding:14px 12px 18px;border-radius:12px;border:.5px solid var(--dsw-alias-border-l2,rgba(127,127,127,.25));background:var(--dsw-alias-bg-layer-1,transparent)}
 .nr-settings-page .nr-row>label{width:120px}
 .nr-settings-page>.nr-row{padding:0}
 .nr-settings-page input[type=checkbox]{appearance:none;-webkit-appearance:none;position:relative;width:36px;height:20px;margin:0 0 0 auto;border-radius:999px;background:color-mix(in srgb,currentColor 22%,transparent);cursor:pointer;transition:background .15s}
