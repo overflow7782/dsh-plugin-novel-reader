@@ -24,7 +24,7 @@ A DeepSeek Harness plugin · read novels in the status bar
 | **Move it anywhere** | Hold the icon and drag left or right — it drops into another slot of that row and the controls beside it slide over smoothly. Settings also has an axis to pick the slot |
 | **Resize it** | All four edges and four corners of the peek window resize it, with a live pixel readout; dragging the bottom edge changes the gap above the icon |
 | **Reader in the sidebar** | The "Novels" tab in the right sidebar is a full reader with a shelf and table of contents, `←` `→` to change chapters |
-| **Boss key** | `Shift+F1` by default, or right-click — dismisses the peek window and closes the "Novels" sidebar tab |
+| **Boss key** | `Shift+F1` by default — dismisses the peek window and closes the "Novels" sidebar tab; right-clicking the peek window only dismisses it |
 | **Formats** | `txt` (UTF-8 / GBK / GB18030 / UTF-16, split on chapter headings, falling back to length) · `epub` (nav first, then NCX) |
 | **Appearance** | Font size, line and paragraph spacing, typeface, first-line indent, text color; separate colors for the shelf and TOC overlays; the glass uses the same scale and formula as `dsh-plugin-wallpaper-engine` and can sync to it in one click |
 
@@ -63,7 +63,7 @@ The status bar icon lives in the official `conversation.composer.dock` slot, nex
 
 ## Planned
 
-None of this is implemented yet — listed for visibility, suggestions welcome.
+Planned features — suggestions welcome.
 
 | Feature | Details |
 |---|---|
